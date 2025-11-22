@@ -48,4 +48,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.cpfString = :cpf")
     boolean existsByCpf(@Param("cpf") String cpf);
+
+    /**
+     * Checks if a phone number already exists in the database.
+     * Used to validate before registration.
+     *
+     * @param phone phone number to be checked
+     * @return true if phone exists, false otherwise
+     */
+    boolean existsByPhone(String phone);
 }

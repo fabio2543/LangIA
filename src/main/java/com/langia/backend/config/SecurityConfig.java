@@ -15,7 +15,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("api/users/register").permitAll()
+                        .requestMatchers("/api/users/register").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated());
         return http.build();
     }
