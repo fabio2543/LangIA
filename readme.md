@@ -13,3 +13,4 @@ docker exec -it langia-postgres psql -U langia_user -d langia
 # Ver containers rodando
 docker ps
 # Teste CI/CD
+# Teste CI/CD
