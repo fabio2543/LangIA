@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,50 +40,38 @@ public class UserController {
      */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
-        try {
-            // Call service to register user
-            User registeredUser = userService.registerUser(
-                    registrationDTO.getName(),
-                    registrationDTO.getEmail(),
-                    registrationDTO.getPassword(),
-                    registrationDTO.getCpf(),
-                    registrationDTO.getPhone(),
-                    registrationDTO.getProfile());
 
-            // Convert User entity to DTO (excluding sensitive data like password and CPF)
-            UserResponseDTO responseDTO = UserResponseDTO.fromUser(registeredUser);
+        // Call service to register user
+        User registeredUser = userService.registerUser(
+                registrationDTO.getName(),
+                registrationDTO.getEmail(),
+                registrationDTO.getPassword(),
+                registrationDTO.getCpf(),
+                registrationDTO.getPhone(),
+                registrationDTO.getProfile());
 
-            // Return 201 Created with the user response DTO (without sensitive data)
-            return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+        // Convert User entity to DTO (excluding sensitive data like password and CPF)
+        UserResponseDTO responseDTO = UserResponseDTO.fromUser(registeredUser);
 
-        } catch (EmailAlreadyExistsException e) {
-            // Handle duplicate email error
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Email already registered");
-            errorResponse.put("message", e.getMessage());
+        // Return 201 Created with the user response DTO (without sensitive data)
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+    }
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (CpfAlreadyExistsException e) {
-            // Handle duplicate CPF error
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "CPF already registered");
-            errorResponse.put("message", e.getMessage());
+    @ExceptionHandler({ EmailAlreadyExistsException.class, CpfAlreadyExistsException.class,
+            PhoneAlreadyExistsException.class, IllegalArgumentException.class })
+    public ResponseEntity<Map<String, String>> handleValidationExceptions(Exception ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "Validation error");
+        errorResponse.put("message", ex.getMessage());
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (PhoneAlreadyExistsException e) {
-            // Handle duplicate phone error
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Phone number already registered");
-            errorResponse.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            // Handle other unexpected errors
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Registration failed");
-            errorResponse.put("message", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleUnexpectedExceptions(Exception ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "Registration failed");
+        errorResponse.put("message", "An unexpected error occurred. Please try again later.");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }

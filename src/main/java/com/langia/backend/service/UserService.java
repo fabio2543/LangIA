@@ -3,6 +3,7 @@ package com.langia.backend.service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.langia.backend.exception.CpfAlreadyExistsException;
 import com.langia.backend.exception.EmailAlreadyExistsException;
@@ -22,7 +23,8 @@ public class UserService {
 
     /**
      * Registers a new user in the system.
-     * Validates if email, CPF, and phone already exist, encrypts password, and saves to database.
+     * Validates if email, CPF, and phone already exist, encrypts password, and
+     * saves to database.
      *
      * @param name      user's name
      * @param email     user's email
@@ -36,11 +38,18 @@ public class UserService {
      * @throws PhoneAlreadyExistsException if phone already exists
      */
     @Transactional
-    public User registerUser(String name, String email, String password, String cpfString, String phone, UserProfile profile) {
+    public User registerUser(String name, String email, String password, String cpfString, String phone,
+            UserProfile profile) {
 
         String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
         String normalizedCpf = cpfString != null ? cpfString.trim() : null;
         String normalizedPhone = phone != null ? phone.trim() : null;
+
+        if (!StringUtils.hasText(normalizedEmail) || !StringUtils.hasText(normalizedCpf)
+                || !StringUtils.hasText(normalizedPhone) || profile == null
+                || !StringUtils.hasText(password)) {
+            throw new IllegalArgumentException("Name, email, password, CPF, phone and profile are required.");
+        }
         // Validate if email already exists
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new EmailAlreadyExistsException("Email already registered: " + normalizedEmail);

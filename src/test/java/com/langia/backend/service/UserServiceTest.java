@@ -111,4 +111,15 @@ class UserServiceTest {
                 "999",
                 UserProfile.STUDENT));
     }
+
+    @Test
+    void registerUser_shouldFailWhenRequiredFieldsMissing() {
+        assertThrows(IllegalArgumentException.class, () -> userService.registerUser(
+                " ",
+                " ",
+                " ",
+                " ",
+                " ",
+                null));
+    }
 }
