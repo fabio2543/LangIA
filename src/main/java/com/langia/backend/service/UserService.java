@@ -40,13 +40,13 @@ public class UserService {
     @Transactional
     public User registerUser(String name, String email, String password, String cpfString, String phone,
             UserProfile profile) {
-
+        String normalizedName = name != null ? name.trim() : null;
         String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
         String normalizedCpf = cpfString != null ? cpfString.trim() : null;
         String normalizedPhone = phone != null ? phone.trim() : null;
 
-        if (!StringUtils.hasText(normalizedEmail) || !StringUtils.hasText(normalizedCpf)
-                || !StringUtils.hasText(normalizedPhone) || profile == null
+        if (!StringUtils.hasText(normalizedName) || !StringUtils.hasText(normalizedEmail)
+                || !StringUtils.hasText(normalizedCpf) || !StringUtils.hasText(normalizedPhone) || profile == null
                 || !StringUtils.hasText(password)) {
             throw new IllegalArgumentException("Name, email, password, CPF, phone and profile are required.");
         }
@@ -71,7 +71,7 @@ public class UserService {
 
         // Create user entity
         User user = User.builder()
-                .name(name)
+                .name(normalizedName)
                 .email(normalizedEmail)
                 .password(encryptedPassword)
                 .cpfString(normalizedCpf)
