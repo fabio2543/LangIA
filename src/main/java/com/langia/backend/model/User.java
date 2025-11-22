@@ -27,8 +27,9 @@ import lombok.Setter;
 @Entity
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = "email"),
-        @UniqueConstraint(columnNames = "phone")
-})
+        @UniqueConstraint(columnNames = "phone"),
+        @UniqueConstraint(columnNames = "cpf_string") })
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -41,13 +42,17 @@ public class User {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @NotBlank
+    @Column(name = "name", nullable = false)
+    private String name;
+
     @Email
     @NotBlank
     @Column(name = "email", unique = true, nullable = false)
     private String email;
 
     @NotBlank
-    @Column(name = "cpf_string", nullable = false, length = 255)
+    @Column(name = "cpf_string", unique = true, nullable = false, length = 255)
     private String cpfString;
 
     @NotBlank

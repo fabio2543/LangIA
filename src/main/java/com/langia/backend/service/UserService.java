@@ -3,8 +3,11 @@ package com.langia.backend.service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import com.langia.backend.exception.CpfAlreadyExistsException;
 import com.langia.backend.exception.EmailAlreadyExistsException;
+import com.langia.backend.exception.PhoneAlreadyExistsException;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.repository.UserRepository;
@@ -20,8 +23,10 @@ public class UserService {
 
     /**
      * Registers a new user in the system.
-     * Validates if email already exists, encrypts password, and saves to database.
+     * Validates if email, CPF, and phone already exist, encrypts password, and
+     * saves to database.
      *
+     * @param name      user's name
      * @param email     user's email
      * @param password  user's password (will be encrypted)
      * @param cpfString user's CPF
@@ -29,12 +34,35 @@ public class UserService {
      * @param profile   user's profile type
      * @return the saved User entity
      * @throws EmailAlreadyExistsException if email already exists
+     * @throws CpfAlreadyExistsException   if CPF already exists
+     * @throws PhoneAlreadyExistsException if phone already exists
      */
     @Transactional
-    public User registerUser(String email, String password, String cpfString, String phone, UserProfile profile) {
+    public User registerUser(String name, String email, String password, String cpfString, String phone,
+            UserProfile profile) {
+        String normalizedName = name != null ? name.trim() : null;
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
+        String normalizedCpf = cpfString != null ? cpfString.trim() : null;
+        String normalizedPhone = phone != null ? phone.trim() : null;
+
+        if (!StringUtils.hasText(normalizedName) || !StringUtils.hasText(normalizedEmail)
+                || !StringUtils.hasText(normalizedCpf) || !StringUtils.hasText(normalizedPhone) || profile == null
+                || !StringUtils.hasText(password)) {
+            throw new IllegalArgumentException("Name, email, password, CPF, phone and profile are required.");
+        }
         // Validate if email already exists
-        if (userRepository.existsByEmail(email)) {
-            throw new EmailAlreadyExistsException("Email already registered: " + email);
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new EmailAlreadyExistsException("Email already registered: " + normalizedEmail);
+        }
+
+        // Validate if CPF already exists
+        if (userRepository.existsByCpf(normalizedCpf)) {
+            throw new CpfAlreadyExistsException("CPF already registered: " + normalizedCpf);
+        }
+
+        // Validate if phone already exists
+        if (userRepository.existsByPhone(normalizedPhone)) {
+            throw new PhoneAlreadyExistsException("Phone number already registered: " + normalizedPhone);
         }
 
         // Encrypt password using BCrypt
@@ -43,10 +71,11 @@ public class UserService {
 
         // Create user entity
         User user = User.builder()
-                .email(email)
+                .name(normalizedName)
+                .email(normalizedEmail)
                 .password(encryptedPassword)
-                .cpfString(cpfString)
-                .phone(phone)
+                .cpfString(normalizedCpf)
+                .phone(normalizedPhone)
                 .profile(profile)
                 .build();
 
