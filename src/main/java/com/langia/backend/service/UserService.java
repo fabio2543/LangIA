@@ -37,19 +37,23 @@ public class UserService {
      */
     @Transactional
     public User registerUser(String name, String email, String password, String cpfString, String phone, UserProfile profile) {
+
+        String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
+        String normalizedCpf = cpfString != null ? cpfString.trim() : null;
+        String normalizedPhone = phone != null ? phone.trim() : null;
         // Validate if email already exists
-        if (userRepository.existsByEmail(email)) {
-            throw new EmailAlreadyExistsException("Email already registered: " + email);
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new EmailAlreadyExistsException("Email already registered: " + normalizedEmail);
         }
 
         // Validate if CPF already exists
-        if (userRepository.existsByCpf(cpfString)) {
-            throw new CpfAlreadyExistsException("CPF already registered: " + cpfString);
+        if (userRepository.existsByCpf(normalizedCpf)) {
+            throw new CpfAlreadyExistsException("CPF already registered: " + normalizedCpf);
         }
 
         // Validate if phone already exists
-        if (userRepository.existsByPhone(phone)) {
-            throw new PhoneAlreadyExistsException("Phone number already registered: " + phone);
+        if (userRepository.existsByPhone(normalizedPhone)) {
+            throw new PhoneAlreadyExistsException("Phone number already registered: " + normalizedPhone);
         }
 
         // Encrypt password using BCrypt
@@ -59,10 +63,10 @@ public class UserService {
         // Create user entity
         User user = User.builder()
                 .name(name)
-                .email(email)
+                .email(normalizedEmail)
                 .password(encryptedPassword)
-                .cpfString(cpfString)
-                .phone(phone)
+                .cpfString(normalizedCpf)
+                .phone(normalizedPhone)
                 .profile(profile)
                 .build();
 
