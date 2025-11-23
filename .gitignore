@@ -17,7 +17,7 @@ target/
 claude.md
 .claude/
 *.claude
-.cursor/
+.cursor/rules/
 ### IntelliJ IDEA ###
 .idea
 *.iws
