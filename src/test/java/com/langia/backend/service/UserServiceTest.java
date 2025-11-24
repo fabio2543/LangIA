@@ -25,6 +25,7 @@ import com.langia.backend.repository.UserRepository;
 import com.langia.backend.service.validator.UserDataValidator;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class UserServiceTest {
 
     private static final String VALID_CPF = "52998224725";

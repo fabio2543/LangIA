@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.langia.backend.config.JwtProperties;
@@ -27,7 +26,6 @@ public class JwtTokenService {
     private final JwtProperties jwtProperties;
     private final SecretKey secretKey;
 
-    @Autowired
     public JwtTokenService(JwtProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
         this.secretKey = Keys.hmacShaKeyFor(jwtProperties.getSecretKey().getBytes());
@@ -37,8 +35,8 @@ public class JwtTokenService {
     /**
      * Generates a new JWT token for a user after successful login.
      *
-     * @param userId   The user's unique identifier
-     * @param profile  The user's profile (STUDENT, TEACHER, ADMIN)
+     * @param userId  The user's unique identifier
+     * @param profile The user's profile (STUDENT, TEACHER, ADMIN)
      * @return A signed JWT token string
      */
     public String generateToken(UUID userId, UserProfile profile) {
@@ -175,4 +173,3 @@ public class JwtTokenService {
         return isTokenValid(token);
     }
 }
-

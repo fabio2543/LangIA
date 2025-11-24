@@ -9,6 +9,7 @@ import org.springframework.util.StringUtils;
 
 import com.langia.backend.exception.CpfAlreadyExistsException;
 import com.langia.backend.exception.EmailAlreadyExistsException;
+import com.langia.backend.exception.PasswordTooShortException;
 import com.langia.backend.exception.PhoneAlreadyExistsException;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
@@ -40,6 +41,7 @@ public class UserService {
      * @throws EmailAlreadyExistsException if email already exists
      * @throws CpfAlreadyExistsException   if CPF already exists
      * @throws PhoneAlreadyExistsException if phone already exists
+     * @throws PasswordTooShortException    if password is shorter than 6 characters
      */
     @Transactional
     @SuppressWarnings("null")
@@ -54,6 +56,12 @@ public class UserService {
                 || !StringUtils.hasText(password)) {
             throw new IllegalArgumentException("Name, email, password and profile are required.");
         }
+
+        // Validate password minimum length
+        if (password.length() < 6) {
+            throw new PasswordTooShortException("Password must be at least 6 characters long.");
+        }
+
         // Validate if email already exists
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new EmailAlreadyExistsException("Email already registered: " + normalizedEmail);

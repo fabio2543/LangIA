@@ -1,11 +1,7 @@
 package com.langia.backend.controller;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,9 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.langia.backend.dto.UserRegistrationDTO;
 import com.langia.backend.dto.UserResponseDTO;
-import com.langia.backend.exception.CpfAlreadyExistsException;
-import com.langia.backend.exception.EmailAlreadyExistsException;
-import com.langia.backend.exception.PhoneAlreadyExistsException;
 import com.langia.backend.model.User;
 import com.langia.backend.service.UserService;
 
@@ -55,23 +48,5 @@ public class UserController {
 
         // Return 201 Created with the user response DTO (without sensitive data)
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
-    }
-
-    @ExceptionHandler({ EmailAlreadyExistsException.class, CpfAlreadyExistsException.class,
-            PhoneAlreadyExistsException.class, IllegalArgumentException.class })
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(Exception ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Validation error");
-        errorResponse.put("message", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleUnexpectedExceptions(Exception ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Registration failed");
-        errorResponse.put("message", "An unexpected error occurred. Please try again later.");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }
