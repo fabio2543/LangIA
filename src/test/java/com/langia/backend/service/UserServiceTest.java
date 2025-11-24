@@ -22,9 +22,14 @@ import com.langia.backend.exception.PhoneAlreadyExistsException;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.repository.UserRepository;
+import com.langia.backend.service.validator.UserDataValidator;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
+
+    private static final String VALID_CPF = "52998224725";
+    private static final String VALID_PHONE_MOBILE = "(11) 98765-4321";
+    private static final String NORMALIZED_PHONE = "+5511987654321";
 
     @Mock
     private UserRepository userRepository;
@@ -35,7 +40,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, passwordEncoder);
+        userService = new UserService(userRepository, passwordEncoder, new UserDataValidator());
     }
 
     @Test
@@ -53,8 +58,8 @@ class UserServiceTest {
                 " John Doe ",
                 "USER@EMAIL.COM ",
                 "plainPassword",
-                " 12345678901 ",
-                " 99999999999 ",
+                " 529.982.247-25 ",
+                " +55 11 98765-4321 ",
                 UserProfile.STUDENT);
 
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -62,8 +67,8 @@ class UserServiceTest {
         User capturedUser = userCaptor.getValue();
 
         assertThat(capturedUser.getEmail()).isEqualTo("user@email.com");
-        assertThat(capturedUser.getCpfString()).isEqualTo("12345678901");
-        assertThat(capturedUser.getPhone()).isEqualTo("99999999999");
+        assertThat(capturedUser.getCpfString()).isEqualTo("52998224725");
+        assertThat(capturedUser.getPhone()).isEqualTo(NORMALIZED_PHONE);
         assertThat(capturedUser.getName()).isEqualTo("John Doe");
         assertThat(capturedUser.getPassword()).isNotEqualTo("plainPassword");
         assertThat(passwordEncoder.matches("plainPassword", capturedUser.getPassword())).isTrue();
@@ -78,22 +83,22 @@ class UserServiceTest {
                 "Name",
                 " existing@email.com ",
                 "password",
-                "123",
-                "999",
+                VALID_CPF,
+                VALID_PHONE_MOBILE,
                 UserProfile.STUDENT));
     }
 
     @Test
     void registerUser_shouldFailWhenCpfExists() {
         when(userRepository.existsByEmail(any())).thenReturn(false);
-        when(userRepository.existsByCpf("123")).thenReturn(true);
+        when(userRepository.existsByCpf(VALID_CPF)).thenReturn(true);
 
         assertThrows(CpfAlreadyExistsException.class, () -> userService.registerUser(
                 "Name",
                 "email@test.com",
                 "password",
-                "123",
-                "999",
+                VALID_CPF,
+                VALID_PHONE_MOBILE,
                 UserProfile.STUDENT));
     }
 
@@ -101,14 +106,15 @@ class UserServiceTest {
     void registerUser_shouldFailWhenPhoneExists() {
         when(userRepository.existsByEmail(any())).thenReturn(false);
         when(userRepository.existsByCpf(any())).thenReturn(false);
-        when(userRepository.existsByPhone("999")).thenReturn(true);
+        when(userRepository.existsByCpf(any())).thenReturn(false);
+        when(userRepository.existsByPhone(NORMALIZED_PHONE)).thenReturn(true);
 
         assertThrows(PhoneAlreadyExistsException.class, () -> userService.registerUser(
                 "Name",
                 "email@test.com",
                 "password",
-                "123",
-                "999",
+                VALID_CPF,
+                VALID_PHONE_MOBILE,
                 UserProfile.STUDENT));
     }
 

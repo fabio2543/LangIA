@@ -1,0 +1,19 @@
+tabela|id|codigo|modulo|ativo
+FUNCTIONALITIES|da0a82d2-976e-4db3-ab74-f59c52caf28e|gerenciar_matriculas|Alunos|true
+FUNCTIONALITIES|41c84817-df9b-418f-97de-d0aac063d52f|ver_progresso_de_alunos|Alunos|true
+FUNCTIONALITIES|eb531295-9284-4cfe-a3be-3bbdc885ae24|ver_proprio_progresso|Alunos|true
+FUNCTIONALITIES|50154818-266a-42e8-8475-74703f4ef6d0|criar_aulas|Aulas|true
+FUNCTIONALITIES|4d486a18-c3b8-4b1f-b9ad-b1f66289ea4e|deletar_qualquer_aula|Aulas|true
+FUNCTIONALITIES|aea51b1f-7612-441e-b294-5d2c48c3e712|editar_aulas_de_outros|Aulas|true
+FUNCTIONALITIES|d594dac7-3b58-4956-8c1f-854de306cb99|editar_proprias_aulas|Aulas|true
+FUNCTIONALITIES|031bfbda-2307-4d05-9780-ddece01d0cde|matricular_se|Aulas|true
+FUNCTIONALITIES|9f2b2883-6c9f-4571-b1dc-df44c3aad058|visualizar_aulas_disponiveis|Aulas|true
+FUNCTIONALITIES|86eb08ed-742c-4c34-94fb-8a26771ced64|editar_perfis_de_outros|Perfil Próprio|true
+FUNCTIONALITIES|6dd2b68e-66a0-497a-95b9-d7637e93541d|editar_proprio_perfil|Perfil Próprio|true
+FUNCTIONALITIES|21da800f-cdd7-48d1-b597-1eb85a61123e|ver_perfis_de_outros|Perfil Próprio|true
+FUNCTIONALITIES|8f8654a2-8d6e-4c4a-a371-18025f817d99|visualizar_proprio_perfil|Perfil Próprio|true
+FUNCTIONALITIES|f65ffbb6-1f46-4397-9333-250639bfe43b|acessar_dashboard_admin|Sistema|true
+FUNCTIONALITIES|7b17e606-d203-47b3-a380-c6ed28e6892d|configurar_sistema|Sistema|true
+FUNCTIONALITIES|7f361aae-606f-4f86-97f3-69cb0de3d165|gerenciar_usuarios|Sistema|true
+FUNCTIONALITIES|c041bfcb-d3d4-4c14-81ad-0ea1982d7d5b|ver_logs_sistema|Sistema|true
+(17 rows)

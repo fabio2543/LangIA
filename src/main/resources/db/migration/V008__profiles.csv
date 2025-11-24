@@ -1,0 +1,5 @@
+tabela|id|codigo|nome|nivel|ativo
+PROFILES|6f8dbc1c-47d7-4679-b95f-b950c881a886|STUDENT|Estudante|1|true
+PROFILES|365ce57a-c173-4ba2-91c1-f541a3d0f01f|TEACHER|Professor|2|true
+PROFILES|2825ebdd-0229-4c25-8ef4-b7246aea5183|ADMIN|Administrador|3|true
+(3 rows)
