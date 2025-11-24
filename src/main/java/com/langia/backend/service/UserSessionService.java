@@ -1,6 +1,10 @@
 package com.langia.backend.service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
+import java.util.HexFormat;
 import java.util.Objects;
 
 import org.springframework.data.redis.core.RedisTemplate;
@@ -20,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserSessionService {
 
     private static final String SESSION_KEY_PREFIX = "session:";
+    private static final String HASH_ALGORITHM = "SHA-256";
 
     private final RedisTemplate<String, UserSessionDTO> redisTemplate;
     private final Duration sessionTtl;
@@ -78,8 +83,17 @@ public class UserSessionService {
         if (!StringUtils.hasText(token)) {
             throw new IllegalArgumentException("Token must not be null or empty");
         }
-        return SESSION_KEY_PREFIX + token;
+        return SESSION_KEY_PREFIX + hashToken(token);
+    }
+
+    private String hashToken(String token) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance(HASH_ALGORITHM);
+            byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("Failed to hash token using " + HASH_ALGORITHM, ex);
+        }
     }
 }
-
 

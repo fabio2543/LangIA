@@ -1,5 +1,7 @@
 package com.langia.backend.service;
 
+import java.util.Objects;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +13,7 @@ import com.langia.backend.exception.PhoneAlreadyExistsException;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.repository.UserRepository;
+import com.langia.backend.service.validator.UserDataValidator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +23,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final UserDataValidator userDataValidator;
 
     /**
      * Registers a new user in the system.
@@ -38,17 +42,17 @@ public class UserService {
      * @throws PhoneAlreadyExistsException if phone already exists
      */
     @Transactional
+    @SuppressWarnings("null")
     public User registerUser(String name, String email, String password, String cpfString, String phone,
             UserProfile profile) {
         String normalizedName = name != null ? name.trim() : null;
         String normalizedEmail = email != null ? email.trim().toLowerCase() : null;
-        String normalizedCpf = cpfString != null ? cpfString.trim() : null;
-        String normalizedPhone = phone != null ? phone.trim() : null;
+        String normalizedCpf = userDataValidator.normalizeAndValidateCpf(cpfString);
+        String normalizedPhone = userDataValidator.normalizeAndValidatePhone(phone);
 
-        if (!StringUtils.hasText(normalizedName) || !StringUtils.hasText(normalizedEmail)
-                || !StringUtils.hasText(normalizedCpf) || !StringUtils.hasText(normalizedPhone) || profile == null
+        if (!StringUtils.hasText(normalizedName) || !StringUtils.hasText(normalizedEmail) || profile == null
                 || !StringUtils.hasText(password)) {
-            throw new IllegalArgumentException("Name, email, password, CPF, phone and profile are required.");
+            throw new IllegalArgumentException("Name, email, password and profile are required.");
         }
         // Validate if email already exists
         if (userRepository.existsByEmail(normalizedEmail)) {
@@ -80,7 +84,6 @@ public class UserService {
                 .build();
 
         // Save to database
-        User savedUser = userRepository.save(user);
-        return savedUser;
+        return Objects.requireNonNull(userRepository.save(user), "User repository returned null on save.");
     }
 }
