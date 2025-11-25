@@ -1,6 +1,8 @@
 package com.langia.backend.dto;
 
 import com.langia.backend.model.UserProfile;
+import com.langia.backend.validation.ValidCpf;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,6 +24,7 @@ public class UserRegistrationDTO {
     private String password;
 
     @NotBlank(message = "CPF is required")
+    @ValidCpf(message = "CPF is invalid")
     private String cpf;
 
     @NotBlank(message = "Phone is required")
