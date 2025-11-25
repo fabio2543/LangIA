@@ -28,6 +28,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.langia.backend.dto.LoginRequestDTO;
 import com.langia.backend.dto.LoginResponseDTO;
 import com.langia.backend.dto.SessionData;
+import com.langia.backend.exception.InvalidCredentialsException;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.repository.UserRepository;
@@ -133,7 +134,7 @@ class AuthenticationServiceTest {
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.empty());
 
         // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () -> {
             authenticationService.login(loginRequest);
         });
 
@@ -152,7 +153,7 @@ class AuthenticationServiceTest {
         when(passwordEncoder.matches(loginRequest.getPassword(), testUser.getPassword())).thenReturn(false);
 
         // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        InvalidCredentialsException exception = assertThrows(InvalidCredentialsException.class, () -> {
             authenticationService.login(loginRequest);
         });
 

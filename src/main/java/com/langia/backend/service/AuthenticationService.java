@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.langia.backend.dto.LoginRequestDTO;
 import com.langia.backend.dto.LoginResponseDTO;
 import com.langia.backend.dto.SessionData;
+import com.langia.backend.exception.InvalidCredentialsException;
 import com.langia.backend.model.User;
 import com.langia.backend.repository.UserRepository;
 import com.langia.backend.util.JwtUtil;
@@ -58,7 +59,7 @@ public class AuthenticationService {
      *
      * @param loginRequest credenciais de login (email e senha)
      * @return resposta de login com token e informações do usuário
-     * @throws RuntimeException se as credenciais forem inválidas
+     * @throws InvalidCredentialsException se as credenciais forem inválidas
      */
     public LoginResponseDTO login(LoginRequestDTO loginRequest) {
         log.info("Tentativa de login para o email: {}", loginRequest.getEmail());
@@ -68,7 +69,7 @@ public class AuthenticationService {
 
         if (userOptional.isEmpty()) {
             log.warn("Tentativa de login com email não cadastrado: {}", loginRequest.getEmail());
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException();
         }
 
         User user = userOptional.get();
@@ -76,7 +77,7 @@ public class AuthenticationService {
         // 2. Valida a senha usando BCrypt
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             log.warn("Tentativa de login com senha incorreta para o email: {}", loginRequest.getEmail());
-            throw new RuntimeException("Invalid credentials");
+            throw new InvalidCredentialsException();
         }
 
         log.info("Credenciais válidas para usuário: {} (ID: {})", user.getEmail(), user.getId());
