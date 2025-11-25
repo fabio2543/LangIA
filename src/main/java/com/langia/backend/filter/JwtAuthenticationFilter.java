@@ -1,10 +1,13 @@
 package com.langia.backend.filter;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -66,15 +69,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // 4. Se a sessão for válida, injeta o contexto de segurança
             if (sessionData != null) {
-                log.debug("Token válido para usuário: {} (ID: {})",
-                        sessionData.getEmail(), sessionData.getUserId());
+                log.debug("Token válido para usuário: {} (ID: {}) com {} permissões",
+                        sessionData.getEmail(), sessionData.getUserId(),
+                        sessionData.getPermissions() != null ? sessionData.getPermissions().size() : 0);
 
-                // Cria objeto de autenticação do Spring Security
+                // Converte permissões do SessionData para GrantedAuthority do Spring Security
+                Collection<? extends GrantedAuthority> authorities =
+                    sessionData.getPermissions() != null
+                        ? sessionData.getPermissions().stream()
+                            .map(permission -> new SimpleGrantedAuthority(permission))
+                            .collect(Collectors.toList())
+                        : java.util.Collections.emptyList();
+
+                // Cria objeto de autenticação do Spring Security com permissões
                 UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                         sessionData,           // Principal (dados do usuário)
                         null,                  // Credentials (não necessárias após autenticação)
-                        new ArrayList<>()      // Authorities (permissões - pode ser expandido)
+                        authorities            // Authorities (permissões convertidas)
                     );
 
                 // Adiciona detalhes da requisição HTTP
@@ -85,8 +97,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Injeta no contexto de segurança do Spring
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                log.debug("Contexto de segurança configurado para usuário: {}",
-                        sessionData.getEmail());
+                log.debug("Contexto de segurança configurado para usuário: {} com authorities: {}",
+                        sessionData.getEmail(), authorities);
             } else {
                 log.warn("Token presente mas inválido ou sessão expirada - acesso negado");
                 // Token inválido ou sessão não existe

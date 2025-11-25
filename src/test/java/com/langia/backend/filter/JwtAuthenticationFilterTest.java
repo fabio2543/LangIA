@@ -1,7 +1,9 @@
 package com.langia.backend.filter;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -20,6 +22,7 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.langia.backend.dto.SessionData;
@@ -342,5 +345,99 @@ class JwtAuthenticationFilterTest {
         verify(authenticationService, never()).validateSession(anyString());
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         assertNull(auth);
+    }
+
+    // ========== Testes de Mapeamento de Permissões para Authorities ==========
+
+    @Test
+    void deveMappearPermissoesParaGrantedAuthorities() throws Exception {
+        // Arrange
+        validSessionData.setPermissions(Set.of("view_courses", "view_lessons", "submit_exercises"));
+        request.addHeader("Authorization", "Bearer " + validToken);
+        when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
+
+        // Act
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        // Assert
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(auth);
+        assertNotNull(auth.getAuthorities());
+        assertEquals(3, auth.getAuthorities().size());
+
+        // Verifica que todas as permissões foram convertidas para GrantedAuthority
+        var authorityNames = auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        assertTrue(authorityNames.contains("view_courses"));
+        assertTrue(authorityNames.contains("view_lessons"));
+        assertTrue(authorityNames.contains("submit_exercises"));
+    }
+
+    @Test
+    void deveInjetarAuthoritiesVaziaQuandoSemPermissoes() throws Exception {
+        // Arrange
+        validSessionData.setPermissions(null); // Sem permissões
+        request.addHeader("Authorization", "Bearer " + validToken);
+        when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
+
+        // Act
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        // Assert
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(auth);
+        assertNotNull(auth.getAuthorities());
+        assertEquals(0, auth.getAuthorities().size());
+    }
+
+    @Test
+    void deveMappearPermissoesDiferentesPorPerfil() throws Exception {
+        // Arrange - Perfil ADMIN com mais permissões
+        Set<String> adminPermissions = Set.of(
+                "view_courses", "create_courses", "manage_users", "view_system_stats"
+        );
+        validSessionData.setProfile(UserProfile.ADMIN);
+        validSessionData.setPermissions(adminPermissions);
+
+        request.addHeader("Authorization", "Bearer " + validToken);
+        when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
+
+        // Act
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        // Assert
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(auth);
+        assertEquals(4, auth.getAuthorities().size());
+
+        var authorityNames = auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        assertTrue(authorityNames.contains("manage_users"));
+        assertTrue(authorityNames.contains("view_system_stats"));
+    }
+
+    @Test
+    void devePermitirAuthorizationComAuthorities() throws Exception {
+        // Arrange
+        validSessionData.setPermissions(Set.of("manage_users"));
+        request.addHeader("Authorization", "Bearer " + validToken);
+        when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
+
+        // Act
+        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+
+        // Assert
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(auth);
+
+        // Verifica que a permissão específica está presente
+        boolean hasManageUsersAuthority = auth.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("manage_users"));
+
+        assertTrue(hasManageUsersAuthority, "Deve ter a authority 'manage_users'");
     }
 }

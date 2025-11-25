@@ -22,6 +22,7 @@ public class UserService {
      * Registers a new user in the system.
      * Validates if email already exists, encrypts password, and saves to database.
      *
+     * @param name      user's full name
      * @param email     user's email
      * @param password  user's password (will be encrypted)
      * @param cpfString user's CPF
@@ -31,7 +32,7 @@ public class UserService {
      * @throws EmailAlreadyExistsException if email already exists
      */
     @Transactional
-    public User registerUser(String email, String password, String cpfString, String phone, UserProfile profile) {
+    public User registerUser(String name, String email, String password, String cpfString, String phone, UserProfile profile) {
         // Validate if email already exists
         if (userRepository.existsByEmail(email)) {
             throw new EmailAlreadyExistsException("Email already registered: " + email);
@@ -43,6 +44,7 @@ public class UserService {
 
         // Create user entity
         User user = User.builder()
+                .name(name)
                 .email(email)
                 .password(encryptedPassword)
                 .cpfString(cpfString)

@@ -13,20 +13,23 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Serviço para gerenciamento de sessões de usuário no Redis.
- * Responsável por criar, recuperar e remover sessões com TTL de 1 hora.
+ * Responsável por criar, recuperar e remover sessões com TTL configurável.
  */
 @Service
 @Slf4j
 public class SessionService {
 
     private static final String SESSION_PREFIX = "session:";
-    private static final long SESSION_EXPIRATION_HOURS = 1;
+    private static final String USER_SESSIONS_PREFIX = "user_sessions:";
 
     @Autowired
     private RedisTemplate<String, SessionData> sessionRedisTemplate;
 
+    @Autowired
+    private RedisTemplate<String, String> stringRedisTemplate;
+
     @Value("${jwt.expiration}")
-    private Long jwtExpiration;
+    private Long jwtExpirationMs;
 
     /**
      * Gera a chave Redis para uma sessão baseada no token.
@@ -39,7 +42,7 @@ public class SessionService {
     }
 
     /**
-     * Salva uma nova sessão no Redis com TTL de 1 hora.
+     * Salva uma nova sessão no Redis com TTL baseado na configuração jwt.expiration.
      *
      * @param token token JWT usado como chave
      * @param sessionData dados da sessão a serem salvos
@@ -49,15 +52,21 @@ public class SessionService {
             String key = getSessionKey(token);
             sessionData.setCreatedAt(System.currentTimeMillis());
 
+            // Usa o tempo de expiração configurado (mesmo do JWT)
             sessionRedisTemplate.opsForValue().set(
                     key,
                     sessionData,
-                    SESSION_EXPIRATION_HOURS,
-                    TimeUnit.HOURS
+                    jwtExpirationMs,
+                    TimeUnit.MILLISECONDS
             );
 
-            log.info("Sessão criada no Redis para usuário: {} (ID: {})",
-                    sessionData.getEmail(), sessionData.getUserId());
+            // Adiciona token ao índice de sessões do usuário
+            String userSessionsKey = USER_SESSIONS_PREFIX + sessionData.getUserId();
+            stringRedisTemplate.opsForSet().add(userSessionsKey, token);
+            stringRedisTemplate.expire(userSessionsKey, jwtExpirationMs, TimeUnit.MILLISECONDS);
+
+            log.info("Sessão criada no Redis para usuário: {} (ID: {}) com TTL de {}ms",
+                    sessionData.getEmail(), sessionData.getUserId(), jwtExpirationMs);
         } catch (Exception e) {
             log.error("Erro ao salvar sessão no Redis para token: {}", token, e);
             throw new RuntimeException("Falha ao criar sessão no Redis", e);
@@ -99,7 +108,17 @@ public class SessionService {
     public boolean removeSession(String token) {
         try {
             String key = getSessionKey(token);
+
+            // Recupera a sessão antes de remover para limpar o índice
+            SessionData sessionData = sessionRedisTemplate.opsForValue().get(key);
+
             Boolean deleted = sessionRedisTemplate.delete(key);
+
+            // Remove do índice de sessões do usuário
+            if (sessionData != null) {
+                String userSessionsKey = USER_SESSIONS_PREFIX + sessionData.getUserId();
+                stringRedisTemplate.opsForSet().remove(userSessionsKey, token);
+            }
 
             if (Boolean.TRUE.equals(deleted)) {
                 log.info("Sessão removida do Redis com sucesso");
@@ -134,6 +153,7 @@ public class SessionService {
     /**
      * Renova o tempo de expiração de uma sessão existente.
      * Útil para implementar "keep-alive" em sessões ativas.
+     * Usa o mesmo TTL configurado em jwt.expiration.
      *
      * @param token token JWT
      * @return true se a sessão foi renovada, false se não existe
@@ -143,14 +163,15 @@ public class SessionService {
             String key = getSessionKey(token);
 
             if (Boolean.TRUE.equals(sessionRedisTemplate.hasKey(key))) {
+                // Renova com o mesmo TTL configurado
                 Boolean renewed = sessionRedisTemplate.expire(
                         key,
-                        SESSION_EXPIRATION_HOURS,
-                        TimeUnit.HOURS
+                        jwtExpirationMs,
+                        TimeUnit.MILLISECONDS
                 );
 
                 if (Boolean.TRUE.equals(renewed)) {
-                    log.debug("Sessão renovada no Redis");
+                    log.debug("Sessão renovada no Redis com TTL de {}ms", jwtExpirationMs);
                     return true;
                 }
             }
@@ -184,27 +205,32 @@ public class SessionService {
      * Remove todas as sessões de um usuário específico.
      * Útil quando é necessário revogar todos os acessos de um usuário.
      *
+     * Usa índice auxiliar (user_sessions:userId) para performance O(1) ao invés de
+     * scan O(N) no Redis, evitando operações custosas em produção.
+     *
      * @param userId ID do usuário
      * @return número de sessões removidas
      */
     public long removeAllUserSessions(String userId) {
         try {
-            // Esta implementação requer buscar todas as chaves com o prefixo
-            // Em produção, considere usar um índice adicional para mapear userId -> tokens
             log.info("Removendo todas as sessões do usuário: {}", userId);
-
-            // Implementação básica - em produção use um índice secundário
-            var keys = sessionRedisTemplate.keys(SESSION_PREFIX + "*");
             long removedCount = 0;
 
-            if (keys != null) {
-                for (String key : keys) {
-                    SessionData session = sessionRedisTemplate.opsForValue().get(key);
-                    if (session != null && session.getUserId().toString().equals(userId)) {
-                        sessionRedisTemplate.delete(key);
+            // Usa índice auxiliar para buscar tokens do usuário (O(1))
+            String userSessionsKey = USER_SESSIONS_PREFIX + userId;
+            var tokens = stringRedisTemplate.opsForSet().members(userSessionsKey);
+
+            if (tokens != null && !tokens.isEmpty()) {
+                for (String token : tokens) {
+                    String sessionKey = getSessionKey(token);
+                    Boolean deleted = sessionRedisTemplate.delete(sessionKey);
+                    if (Boolean.TRUE.equals(deleted)) {
                         removedCount++;
                     }
                 }
+
+                // Remove o índice de sessões do usuário
+                stringRedisTemplate.delete(userSessionsKey);
             }
 
             log.info("Removidas {} sessões do usuário: {}", removedCount, userId);

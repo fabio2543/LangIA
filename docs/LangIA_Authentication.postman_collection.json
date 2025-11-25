@@ -1,0 +1,882 @@
+{
+	"info": {
+		"_postman_id": "langia-auth-collection",
+		"name": "LangIA - Authentication API",
+		"description": "Collection completa para testar o sistema de autenticação JWT do LangIA.\n\n## Configuração Inicial\n\n1. Configure a variável `baseUrl` no ambiente (ex: http://localhost:8080)\n2. Execute o endpoint de Login para obter um token\n3. O token será automaticamente salvo e usado nos próximos requests\n\n## Fluxo Recomendado\n\n1. **Register User** - Cadastrar novo usuário\n2. **Login** - Autenticar e obter token JWT\n3. **Validate Session** - Validar sessão ativa\n4. **Renew Session** - Renovar sessão\n5. **Logout** - Encerrar sessão\n\n## Variáveis\n\n- `baseUrl`: URL base da API (ex: http://localhost:8080)\n- `token`: Token JWT (preenchido automaticamente após login)\n- `userId`: ID do usuário (preenchido automaticamente após login)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "langia-team"
+	},
+	"item": [
+		{
+			"name": "1. User Registration",
+			"item": [
+				{
+					"name": "Register New Student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Testa se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"// Valida estrutura da resposta",
+									"pm.test(\"Response has user data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('email');",
+									"    pm.expect(jsonData).to.have.property('profile');",
+									"});",
+									"",
+									"// Salva o email para usar no login",
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"userEmail\", jsonData.email);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"João Silva\",\n  \"email\": \"joao.silva@example.com\",\n  \"password\": \"senha123\",\n  \"profile\": \"STUDENT\",\n  \"cpf\": \"11144477735\",\n  \"phone\": \"11987654321\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register"
+							]
+						},
+						"description": "Cadastra um novo usuário do tipo STUDENT no sistema.\n\n**Perfis disponíveis:** STUDENT, TEACHER, ADMIN\n\n**Validações:**\n- Nome: obrigatório\n- Email: formato válido\n- Senha: mínimo 6 caracteres\n- CPF: válido com dígitos verificadores\n- Telefone: formato brasileiro válido"
+					},
+					"response": []
+				},
+				{
+					"name": "Register New Teacher",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Maria Santos\",\n  \"email\": \"maria.santos@example.com\",\n  \"password\": \"senha123\",\n  \"profile\": \"TEACHER\",\n  \"cpf\": \"11144477735\",\n  \"phone\": \"11987654321\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"register"
+							]
+						},
+						"description": "Cadastra um novo usuário do tipo TEACHER no sistema."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para cadastro de novos usuários no sistema."
+		},
+		{
+			"name": "2. Authentication",
+			"item": [
+				{
+					"name": "Login - Student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Testa status code",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Valida estrutura da resposta",
+									"pm.test(\"Response contains token and user data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    pm.expect(jsonData).to.have.property('userId');",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('email');",
+									"    pm.expect(jsonData).to.have.property('profile');",
+									"    pm.expect(jsonData).to.have.property('permissions');",
+									"    pm.expect(jsonData).to.have.property('expiresIn');",
+									"});",
+									"",
+									"// Valida que é perfil STUDENT",
+									"pm.test(\"User profile is STUDENT\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.profile).to.eql('STUDENT');",
+									"});",
+									"",
+									"// Valida que tem permissões",
+									"pm.test(\"Has permissions array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.permissions).to.be.an('array');",
+									"    pm.expect(jsonData.permissions.length).to.be.above(0);",
+									"});",
+									"",
+									"// Salva o token e userId nas variáveis de ambiente",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.token);",
+									"    pm.environment.set(\"userId\", jsonData.userId);",
+									"    console.log(\"Token saved: \" + jsonData.token);",
+									"    console.log(\"UserId saved: \" + jsonData.userId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"joao.silva@example.com\",\n  \"password\": \"senha123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Realiza login no sistema e retorna token JWT.\n\n**Resposta de Sucesso:**\n- token: Token JWT para autenticação\n- userId: ID do usuário\n- name: Nome do usuário\n- email: Email do usuário\n- profile: Perfil (STUDENT, TEACHER, ADMIN)\n- permissions: Array de permissões\n- expiresIn: Tempo de expiração em milissegundos\n\n**Sessão:**\n- Duração: 1 hora (3600000ms)\n- Armazenamento: Redis\n- Renovável: Sim"
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Teacher",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"User profile is TEACHER\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.profile).to.eql('TEACHER');",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.token);",
+									"    pm.environment.set(\"userId\", jsonData.userId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"maria.santos@example.com\",\n  \"password\": \"senha123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login com perfil de professor (TEACHER)."
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Invalid Credentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response contains error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.include('Invalid credentials');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"joao.silva@example.com\",\n  \"password\": \"senhaErrada\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Testa login com credenciais inválidas.\n\n**Esperado:** Status 401 com mensagem de erro."
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Missing Fields",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"joao.silva@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Testa login sem senha.\n\n**Esperado:** Status 400 com erro de validação."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticação (login) do sistema."
+		},
+		{
+			"name": "3. Session Management",
+			"item": [
+				{
+					"name": "Validate Session - Valid Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Session is valid\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('valid');",
+									"    pm.expect(jsonData.valid).to.be.true;",
+									"});",
+									"",
+									"pm.test(\"Response contains session data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('sessionData');",
+									"    pm.expect(jsonData.sessionData).to.have.property('userId');",
+									"    pm.expect(jsonData.sessionData).to.have.property('email');",
+									"    pm.expect(jsonData.sessionData).to.have.property('profile');",
+									"    pm.expect(jsonData.sessionData).to.have.property('permissions');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/validate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"validate"
+							]
+						},
+						"description": "Valida se a sessão atual está ativa.\n\n**Requer:** Token JWT válido no header Authorization\n\n**Resposta de Sucesso:**\n```json\n{\n  \"valid\": true,\n  \"sessionData\": {\n    \"userId\": \"uuid\",\n    \"name\": \"Nome\",\n    \"email\": \"email@example.com\",\n    \"profile\": \"STUDENT\",\n    \"permissions\": [\"perm1\", \"perm2\"]\n  }\n}\n```"
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Session - No Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Response contains error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/validate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"validate"
+							]
+						},
+						"description": "Testa validação sem token.\n\n**Esperado:** Status 401 Unauthorized"
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Session - Invalid Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test(\"Session is invalid\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.valid).to.be.false;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid_token",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/validate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"validate"
+							]
+						},
+						"description": "Testa validação com token inválido.\n\n**Esperado:** Status 401 com valid=false"
+					},
+					"response": []
+				},
+				{
+					"name": "Renew Session - Valid Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains success message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData.message).to.include('renewed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/renew",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"renew"
+							]
+						},
+						"description": "Renova o TTL da sessão no Redis.\n\n**Requer:** Token JWT válido\n\n**Efeito:** Estende a sessão por mais 1 hora a partir do momento da renovação.\n\n**Uso recomendado:** Chamar periodicamente (ex: a cada 30 minutos) para manter a sessão ativa."
+					},
+					"response": []
+				},
+				{
+					"name": "Renew Session - Invalid Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid_token",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/renew",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"renew"
+							]
+						},
+						"description": "Testa renovação com token inválido.\n\n**Esperado:** Status 401"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para validação e renovação de sessões."
+		},
+		{
+			"name": "4. Logout",
+			"item": [
+				{
+					"name": "Logout - Valid Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"// Limpa as variáveis de ambiente",
+									"pm.environment.unset(\"token\");",
+									"pm.environment.unset(\"userId\");",
+									"console.log(\"Token removed from environment\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Realiza logout removendo a sessão do Redis.\n\n**Requer:** Token JWT válido\n\n**Efeito:**\n- Remove sessão do Redis\n- Token JWT não será mais aceito\n- Retorna status 204 No Content\n\n**Importante:** Mesmo que o JWT ainda seja válido estruturalmente, ele não será mais aceito pois a sessão foi removida do Redis."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout - No Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Testa logout sem token.\n\n**Esperado:** Status 401"
+					},
+					"response": []
+				},
+				{
+					"name": "Logout - Invalid Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid_token",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Testa logout com token inválido.\n\n**Esperado:** Status 401"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para encerramento de sessão (logout)."
+		},
+		{
+			"name": "5. Protected Endpoints Examples",
+			"item": [
+				{
+					"name": "Access Protected Endpoint - With Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Este endpoint requer autenticação",
+									"// Se o token for válido, deve retornar 200 ou o status esperado do endpoint",
+									"// Se o token for inválido, deve retornar 401 ou 403",
+									"pm.test(\"Request processed (check specific endpoint behavior)\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 401, 403, 404]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Exemplo de acesso a endpoint protegido COM token JWT.\n\n**Nota:** Substitua esta URL por qualquer endpoint protegido da sua aplicação.\n\nO filtro JwtAuthenticationFilter automaticamente:\n1. Extrai o token do header Authorization\n2. Valida o JWT\n3. Verifica a sessão no Redis\n4. Injeta o contexto de segurança\n5. Permite acesso se tudo estiver válido"
+					},
+					"response": []
+				},
+				{
+					"name": "Access Protected Endpoint - Without Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 401 or 403 (Unauthorized/Forbidden)\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Exemplo de acesso a endpoint protegido SEM token JWT.\n\n**Esperado:** Status 401 ou 403\n\nO Spring Security bloqueia automaticamente o acesso quando:\n- Não há token no header\n- Token inválido\n- Sessão expirada no Redis"
+					},
+					"response": []
+				}
+			],
+			"description": "Exemplos de como acessar endpoints protegidos do sistema.\n\n**Importante:** Todos os endpoints não listados em `SecurityConfig.permitAll()` requerem autenticação JWT."
+		},
+		{
+			"name": "6. Health Check",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actuator/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"actuator",
+								"health"
+							]
+						},
+						"description": "Endpoint público de health check.\n\n**Não requer autenticação** (configurado como rota pública no SecurityConfig)."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints públicos de monitoramento."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Script executado antes de cada request",
+					"// Útil para configurações globais"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Script executado após cada request",
+					"// Útil para testes globais"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userEmail",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
