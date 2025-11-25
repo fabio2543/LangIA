@@ -2,11 +2,11 @@ package com.langia.backend.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -26,7 +26,7 @@ public class SecurityConfig {
      * Construtor com injeção de dependência.
      * Usa @Autowired(required = false) para permitir contextos de teste sem o filtro.
      */
-    public SecurityConfig(@Autowired(required = false) JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(@Lazy @Autowired(required = false) JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -77,14 +77,5 @@ public class SecurityConfig {
         }
 
         return http.build();
-    }
-
-    /**
-     * Bean do encoder de senhas BCrypt.
-     * Usado para criptografar senhas com salt aleatório.
-     */
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 }

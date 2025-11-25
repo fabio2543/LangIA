@@ -24,7 +24,6 @@ public class RedisConfig {
 
     @Value("${spring.data.redis.port:6379}")
     private int redisPort;
-
     /**
      * Configura a factory de conexão com Redis.
      *

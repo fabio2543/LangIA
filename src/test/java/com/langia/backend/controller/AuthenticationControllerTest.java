@@ -25,8 +25,10 @@ import com.langia.backend.dto.LoginRequestDTO;
 import com.langia.backend.dto.LoginResponseDTO;
 import com.langia.backend.dto.SessionData;
 import com.langia.backend.exception.InvalidCredentialsException;
+import com.langia.backend.exception.MissingTokenException;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.service.AuthenticationService;
+import com.langia.backend.util.TokenExtractor;
 
 /**
  * Testes para o controller de autenticação.
@@ -43,6 +45,9 @@ class AuthenticationControllerTest {
 
     @MockBean
     private AuthenticationService authenticationService;
+
+    @MockBean
+    private TokenExtractor tokenExtractor;
 
     private LoginRequestDTO validLoginRequest;
     private LoginResponseDTO loginResponse;
@@ -77,6 +82,15 @@ class AuthenticationControllerTest {
                 .build();
 
         validToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test";
+
+        // Configura TokenExtractor para extrair token de "Bearer <token>"
+        when(tokenExtractor.extract("Bearer " + validToken)).thenReturn(validToken);
+        when(tokenExtractor.extract(null)).thenThrow(new MissingTokenException());
+        when(tokenExtractor.extract("")).thenThrow(new MissingTokenException());
+        when(tokenExtractor.extract("InvalidFormat")).thenThrow(new MissingTokenException());
+        when(tokenExtractor.extract("Token " + validToken)).thenThrow(new MissingTokenException());
+        when(tokenExtractor.extract("Bearer ")).thenThrow(new MissingTokenException());
+        when(tokenExtractor.extract(validToken)).thenThrow(new MissingTokenException());
     }
 
     // ========== Testes de Login ==========
