@@ -2,6 +2,7 @@ package com.langia.backend.dto;
 
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.validation.ValidCpf;
+import com.langia.backend.validation.ValidPhone;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -28,6 +29,7 @@ public class UserRegistrationDTO {
     private String cpf;
 
     @NotBlank(message = "Phone is required")
+    @ValidPhone(message = "Phone number is invalid")
     private String phone;
 
     @NotNull(message = "Profile is required")
