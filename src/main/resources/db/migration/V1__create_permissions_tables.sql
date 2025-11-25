@@ -1,77 +1,89 @@
--- Migration: Create permissions tables (functionalities, profiles, profile_functionalities)
--- Created: 2024
+-- ================================================
+-- Migration V1: Create Permissions Structure
+-- Description: Creates tables for functionalities, profiles and their associations
+-- ================================================
 
 -- Table: functionalities
--- Stores system functionalities/features that can be granted to profiles
-CREATE TABLE functionalities (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT NOT NULL,
+-- Stores all available functionalities/permissions in the system
+CREATE TABLE IF NOT EXISTS functionalities (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(100) UNIQUE NOT NULL,
+    description VARCHAR(255) NOT NULL,
     module VARCHAR(50) NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT true,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Index for faster lookups by code
+CREATE INDEX IF NOT EXISTS idx_functionalities_code ON functionalities(code);
+
+-- Index for filtering by module
+CREATE INDEX IF NOT EXISTS idx_functionalities_module ON functionalities(module);
+
+-- Index for active functionalities
+CREATE INDEX IF NOT EXISTS idx_functionalities_active ON functionalities(active);
+
+-- ================================================
+
 -- Table: profiles
--- Stores user profiles with hierarchical levels
-CREATE TABLE profiles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code VARCHAR(20) NOT NULL UNIQUE,
+-- Stores user profiles with hierarchy levels
+CREATE TABLE IF NOT EXISTS profiles (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
-    description TEXT,
+    description VARCHAR(500),
     hierarchy_level INTEGER NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT true,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT check_hierarchy_level CHECK (hierarchy_level IN (1, 2, 3))
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Index for faster lookups by code
+CREATE INDEX IF NOT EXISTS idx_profiles_code ON profiles(code);
+
+-- Index for hierarchy level queries
+CREATE INDEX IF NOT EXISTS idx_profiles_hierarchy ON profiles(hierarchy_level);
+
+-- Index for active profiles
+CREATE INDEX IF NOT EXISTS idx_profiles_active ON profiles(active);
+
+-- ================================================
 
 -- Table: profile_functionalities
--- Junction table: Associates profiles with functionalities
-CREATE TABLE profile_functionalities (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    profile_id UUID NOT NULL,
-    functionality_id UUID NOT NULL,
+-- Junction table between profiles and functionalities
+CREATE TABLE IF NOT EXISTS profile_functionalities (
+    id BIGSERIAL PRIMARY KEY,
+    profile_id BIGINT NOT NULL,
+    functionality_id BIGINT NOT NULL,
+    granted_by_inheritance BOOLEAN NOT NULL DEFAULT FALSE,
     granted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    granted_by_inheritance BOOLEAN NOT NULL DEFAULT false,
+
+    -- Foreign keys
     CONSTRAINT fk_profile_functionalities_profile
-        FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
+        FOREIGN KEY (profile_id)
+        REFERENCES profiles(id)
+        ON DELETE CASCADE,
+
     CONSTRAINT fk_profile_functionalities_functionality
-        FOREIGN KEY (functionality_id) REFERENCES functionalities(id) ON DELETE CASCADE,
-    CONSTRAINT uk_profile_functionality UNIQUE (profile_id, functionality_id)
+        FOREIGN KEY (functionality_id)
+        REFERENCES functionalities(id)
+        ON DELETE CASCADE,
+
+    -- Unique constraint: each profile can have each functionality only once
+    CONSTRAINT uk_profile_functionality
+        UNIQUE (profile_id, functionality_id)
 );
 
--- Indexes for performance
-CREATE INDEX idx_profile_functionalities_profile_id ON profile_functionalities(profile_id);
-CREATE INDEX idx_profile_functionalities_functionality_id ON profile_functionalities(functionality_id);
-CREATE INDEX idx_functionalities_code ON functionalities(code);
-CREATE INDEX idx_functionalities_module ON functionalities(module);
-CREATE INDEX idx_functionalities_active ON functionalities(active);
-CREATE INDEX idx_profiles_code ON profiles(code);
-CREATE INDEX idx_profiles_hierarchy_level ON profiles(hierarchy_level);
-CREATE INDEX idx_profiles_active ON profiles(active);
+-- Index for queries by profile
+CREATE INDEX IF NOT EXISTS idx_profile_functionalities_profile ON profile_functionalities(profile_id);
 
--- Insert default profiles
-INSERT INTO profiles (code, name, description, hierarchy_level, active) VALUES
-    ('STUDENT', 'Student', 'Student profile with basic system access', 1, true),
-    ('TEACHER', 'Teacher', 'Teacher profile with access to create and manage lessons', 2, true),
-    ('ADMIN', 'Administrator', 'Administrator profile with full system access', 3, true);
+-- Index for queries by functionality
+CREATE INDEX IF NOT EXISTS idx_profile_functionalities_functionality ON profile_functionalities(functionality_id);
 
--- Function to automatically update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+-- Index for inheritance queries
+CREATE INDEX IF NOT EXISTS idx_profile_functionalities_inheritance ON profile_functionalities(granted_by_inheritance);
 
--- Triggers to automatically update updated_at
-CREATE TRIGGER update_functionalities_updated_at
-    BEFORE UPDATE ON functionalities
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_profiles_updated_at
-    BEFORE UPDATE ON profiles
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Composite index for common queries
+CREATE INDEX IF NOT EXISTS idx_profile_functionalities_profile_granted
+    ON profile_functionalities(profile_id, granted_by_inheritance);
