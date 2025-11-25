@@ -41,6 +41,10 @@ public class User {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @NotBlank
+    @Column(name = "name", nullable = false)
+    private String name;
+
     @Email
     @NotBlank
     @Column(name = "email", unique = true, nullable = false)
