@@ -12,23 +12,23 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.langia.backend.filter.JwtAuthenticationFilter;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * Configuração de segurança do Spring Security.
  * Define rotas públicas, rotas protegidas e configura o filtro JWT.
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final CustomAccessDeniedHandler accessDeniedHandler;
 
-    /**
-     * Construtor com injeção de dependência.
-     * Usa @Autowired(required = false) para permitir contextos de teste sem o filtro.
-     */
-    public SecurityConfig(@Lazy @Autowired(required = false) JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    }
+    @Lazy
+    @Autowired(required = false)
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
      * Configura a cadeia de filtros de segurança.
@@ -39,6 +39,7 @@ public class SecurityConfig {
      * - Desabilita CSRF (não necessário para API stateless)
      * - Configura política de sessão como STATELESS (usando JWT, não sessões HTTP)
      * - Injeta o filtro JWT na cadeia de filtros
+     * - Configura handlers customizados para erros de autenticação/autorização
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -51,7 +52,6 @@ public class SecurityConfig {
                 // Rotas públicas - não exigem autenticação
                 .requestMatchers(
                     "/api/auth/login",      // Login
-                    "/api/auth/register",   // Cadastro via auth
                     "/api/users/register",  // Cadastro de usuários
                     "/h2-console/**",       // Console H2 (apenas dev)
                     "/actuator/**",         // Endpoints de monitoramento
@@ -66,6 +66,12 @@ public class SecurityConfig {
             // Não cria sessões HTTP pois usamos JWT
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+
+            // Configura handlers customizados para erros de autenticação/autorização
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
             );
 
         // Adiciona o filtro JWT antes do filtro padrão de autenticação, se disponível

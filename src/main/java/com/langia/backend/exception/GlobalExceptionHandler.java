@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    // ========== Exceções de Autenticação ==========
+
     /**
      * Trata exceções de credenciais inválidas (login).
      */
@@ -48,6 +50,40 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(ex.getMessage()));
     }
 
+    // ========== Exceções de Registro de Usuário ==========
+
+    /**
+     * Trata exceções de email já cadastrado.
+     */
+    @ExceptionHandler(EmailAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
+        log.warn("Email já cadastrado: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    /**
+     * Trata exceções de CPF já cadastrado.
+     */
+    @ExceptionHandler(CpfAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleCpfAlreadyExists(CpfAlreadyExistsException ex) {
+        log.warn("CPF já cadastrado: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("CPF já cadastrado no sistema"));
+    }
+
+    /**
+     * Trata exceções de telefone já cadastrado.
+     */
+    @ExceptionHandler(PhoneAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handlePhoneAlreadyExists(PhoneAlreadyExistsException ex) {
+        log.warn("Telefone já cadastrado: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse("Telefone já cadastrado no sistema"));
+    }
+
+    // ========== Exceções de Validação ==========
+
     /**
      * Trata exceções de validação de DTOs (@Valid).
      */
@@ -56,11 +92,13 @@ public class GlobalExceptionHandler {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .findFirst()
-                .orElse("Validation error");
+                .orElse("Erro de validação");
         log.warn("Erro de validação: {}", message);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(message));
     }
+
+    // ========== Exceção Genérica (Fallback) ==========
 
     /**
      * Trata qualquer exceção não mapeada (fallback).

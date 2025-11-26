@@ -28,6 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.langia.backend.dto.SessionData;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.service.AuthenticationService;
+import com.langia.backend.util.TokenExtractor;
 
 /**
  * Testes para o filtro de autenticação JWT.
@@ -37,6 +38,9 @@ class JwtAuthenticationFilterTest {
 
     @Mock
     private AuthenticationService authenticationService;
+
+    @Mock
+    private TokenExtractor tokenExtractor;
 
     @InjectMocks
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -75,6 +79,7 @@ class JwtAuthenticationFilterTest {
     void deveExtrairTokenComSucessoDoHeaderBearer() throws Exception {
         // Arrange
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
 
         // Act
@@ -90,6 +95,7 @@ class JwtAuthenticationFilterTest {
     @Test
     void deveContinuarSemAutenticacaoQuandoNaoHouverToken() throws Exception {
         // Arrange - sem header Authorization
+        when(tokenExtractor.extractOrNull(null)).thenReturn(null);
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -104,6 +110,7 @@ class JwtAuthenticationFilterTest {
     void deveContinuarSemAutenticacaoQuandoHeaderNaoForBearer() throws Exception {
         // Arrange
         request.addHeader("Authorization", "Basic dXNlcjpwYXNz");
+        when(tokenExtractor.extractOrNull("Basic dXNlcjpwYXNz")).thenReturn(null);
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -118,6 +125,7 @@ class JwtAuthenticationFilterTest {
     void deveContinuarSemAutenticacaoQuandoHeaderForVazio() throws Exception {
         // Arrange
         request.addHeader("Authorization", "");
+        when(tokenExtractor.extractOrNull("")).thenReturn(null);
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -134,6 +142,7 @@ class JwtAuthenticationFilterTest {
     void deveInjetarContextoDeSegurancaParaSessaoValida() throws Exception {
         // Arrange
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
 
         // Act
@@ -155,6 +164,7 @@ class JwtAuthenticationFilterTest {
     void naoDeveInjetarContextoParaSessaoInvalida() throws Exception {
         // Arrange
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(null);
 
         // Act
@@ -171,6 +181,7 @@ class JwtAuthenticationFilterTest {
         // Arrange
         String expiredToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.expired_token";
         request.addHeader("Authorization", "Bearer " + expiredToken);
+        when(tokenExtractor.extractOrNull("Bearer " + expiredToken)).thenReturn(expiredToken);
         when(authenticationService.validateSession(expiredToken)).thenReturn(null);
 
         // Act
@@ -188,6 +199,7 @@ class JwtAuthenticationFilterTest {
     void deveContinuarCadeiaAposSucessoNaAutenticacao() throws Exception {
         // Arrange
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
 
         // Act
@@ -202,6 +214,7 @@ class JwtAuthenticationFilterTest {
     @Test
     void deveContinuarCadeiaQuandoNaoHouverToken() throws Exception {
         // Arrange - sem token
+        when(tokenExtractor.extractOrNull(null)).thenReturn(null);
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -216,6 +229,7 @@ class JwtAuthenticationFilterTest {
     void deveContinuarCadeiaMesmoComTokenInvalido() throws Exception {
         // Arrange
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(null);
 
         // Act
@@ -233,6 +247,7 @@ class JwtAuthenticationFilterTest {
     void deveTratarExcecaoELimparContexto() throws Exception {
         // Arrange
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken))
                 .thenThrow(new RuntimeException("Redis connection error"));
 
@@ -255,6 +270,7 @@ class JwtAuthenticationFilterTest {
         // Arrange
         validSessionData.setProfile(UserProfile.STUDENT);
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
 
         // Act
@@ -272,6 +288,7 @@ class JwtAuthenticationFilterTest {
         // Arrange
         validSessionData.setProfile(UserProfile.TEACHER);
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
 
         // Act
@@ -289,6 +306,7 @@ class JwtAuthenticationFilterTest {
         // Arrange
         validSessionData.setProfile(UserProfile.ADMIN);
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
 
         // Act
@@ -306,15 +324,16 @@ class JwtAuthenticationFilterTest {
     @Test
     void deveExtrairTokenComEspacosExtras() throws Exception {
         // Arrange
-        request.addHeader("Authorization", "Bearer  " + validToken); // Dois espaços
-        // Não vai validar pois substring(7) pegará " " + token
-        when(authenticationService.validateSession(anyString())).thenReturn(null);
+        String headerValue = "Bearer  " + validToken; // Dois espaços
+        request.addHeader("Authorization", headerValue);
+        // TokenExtractor retorna null para tokens com espaços extras (formato inválido)
+        when(tokenExtractor.extractOrNull(headerValue)).thenReturn(null);
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // Assert
-        // Com dois espaços, o token extraído terá um espaço no início
+        verify(authenticationService, never()).validateSession(anyString());
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         assertNull(auth);
     }
@@ -323,6 +342,7 @@ class JwtAuthenticationFilterTest {
     void deveRejeitarHeaderBearerSemToken() throws Exception {
         // Arrange
         request.addHeader("Authorization", "Bearer ");
+        when(tokenExtractor.extractOrNull("Bearer ")).thenReturn(null);
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -337,6 +357,7 @@ class JwtAuthenticationFilterTest {
     void deveRejeitarHeaderBearerMinusculo() throws Exception {
         // Arrange
         request.addHeader("Authorization", "bearer " + validToken);
+        when(tokenExtractor.extractOrNull("bearer " + validToken)).thenReturn(null);
 
         // Act
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -354,6 +375,7 @@ class JwtAuthenticationFilterTest {
         // Arrange
         validSessionData.setPermissions(Set.of("view_courses", "view_lessons", "submit_exercises"));
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
 
         // Act
@@ -380,6 +402,7 @@ class JwtAuthenticationFilterTest {
         // Arrange
         validSessionData.setPermissions(null); // Sem permissões
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
 
         // Act
@@ -402,6 +425,7 @@ class JwtAuthenticationFilterTest {
         validSessionData.setPermissions(adminPermissions);
 
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
 
         // Act
@@ -425,6 +449,7 @@ class JwtAuthenticationFilterTest {
         // Arrange
         validSessionData.setPermissions(Set.of("manage_users"));
         request.addHeader("Authorization", "Bearer " + validToken);
+        when(tokenExtractor.extractOrNull("Bearer " + validToken)).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(validSessionData);
 
         // Act
