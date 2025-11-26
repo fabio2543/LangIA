@@ -1,5 +1,6 @@
 package com.langia.backend.service;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.langia.backend.dto.SessionData;
+import com.langia.backend.util.JwtUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,6 +29,9 @@ public class SessionService {
 
     @Autowired
     private RedisTemplate<String, String> stringRedisTemplate;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @Value("${jwt.expiration}")
     private Long jwtExpirationMs;
@@ -151,7 +156,7 @@ public class SessionService {
     }
 
     /**
-     * Renova o tempo de expiração de uma sessão existente.
+     * Renova o tempo de expiração de uma sessão existente e do índice de sessões do usuário.
      * Útil para implementar "keep-alive" em sessões ativas.
      * Usa o mesmo TTL configurado em jwt.expiration.
      *
@@ -163,7 +168,7 @@ public class SessionService {
             String key = getSessionKey(token);
 
             if (Boolean.TRUE.equals(sessionRedisTemplate.hasKey(key))) {
-                // Renova com o mesmo TTL configurado
+                // Renova TTL da sessão
                 Boolean renewed = sessionRedisTemplate.expire(
                         key,
                         jwtExpirationMs,
@@ -171,7 +176,15 @@ public class SessionService {
                 );
 
                 if (Boolean.TRUE.equals(renewed)) {
-                    log.debug("Sessão renovada no Redis com TTL de {}ms", jwtExpirationMs);
+                    // Tenta renovar TTL do índice de sessões do usuário (operação secundária)
+                    try {
+                        UUID userId = jwtUtil.extractUserId(token);
+                        String userSessionsKey = USER_SESSIONS_PREFIX + userId;
+                        stringRedisTemplate.expire(userSessionsKey, jwtExpirationMs, TimeUnit.MILLISECONDS);
+                        log.debug("Sessão e índice de usuário renovados com TTL de {}ms", jwtExpirationMs);
+                    } catch (Exception e) {
+                        log.warn("Não foi possível renovar índice de sessões do usuário: {}", e.getMessage());
+                    }
                     return true;
                 }
             }

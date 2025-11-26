@@ -1,8 +1,5 @@
 package com.langia.backend.controller;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.langia.backend.dto.UserRegistrationDTO;
 import com.langia.backend.dto.UserResponseDTO;
-import com.langia.backend.exception.EmailAlreadyExistsException;
 import com.langia.backend.model.User;
 import com.langia.backend.service.UserService;
 
@@ -20,6 +16,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Controller responsável pelo gerenciamento de usuários.
+ * Exceções são tratadas pelo GlobalExceptionHandler.
+ */
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -29,59 +29,28 @@ public class UserController {
     private final UserService userService;
 
     /**
-     * Endpoint to register a new user.
-     * Validates the DTO, checks for duplicate email, encrypts password, and saves
-     * to database.
+     * Registra um novo usuário no sistema.
      *
-     * IMPORTANTE: Retorna UserResponseDTO que NÃO inclui a senha hash por segurança.
-     *
-     * @param registrationDTO user registration data
-     * @return ResponseEntity with UserResponseDTO and status 201, or error message
-     *         with status 400
+     * @param registrationDTO dados de registro do usuário
+     * @return UserResponseDTO com status 201 Created
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
-        try {
-            log.info("Tentativa de registro de novo usuário: {}", registrationDTO.getEmail());
+    public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
+        log.info("Recebida requisição de registro para email: {}", registrationDTO.getEmail());
 
-            // Call service to register user (agora com name)
-            User registeredUser = userService.registerUser(
-                    registrationDTO.getName(),
-                    registrationDTO.getEmail(),
-                    registrationDTO.getPassword(),
-                    registrationDTO.getCpf(),
-                    registrationDTO.getPhone(),
-                    registrationDTO.getProfile());
+        User registeredUser = userService.registerUser(
+                registrationDTO.getName(),
+                registrationDTO.getEmail(),
+                registrationDTO.getPassword(),
+                registrationDTO.getCpf(),
+                registrationDTO.getPhone(),
+                registrationDTO.getProfile());
 
-            log.info("Usuário registrado com sucesso: {} (ID: {})",
-                    registeredUser.getEmail(), registeredUser.getId());
+        log.info("Usuário registrado com sucesso: {} (ID: {})",
+                registeredUser.getEmail(), registeredUser.getId());
 
-            // Convert to DTO to avoid exposing sensitive data (password hash)
-            UserResponseDTO responseDTO = UserResponseDTO.fromUser(registeredUser);
+        UserResponseDTO responseDTO = UserResponseDTO.fromUser(registeredUser);
 
-            // Return 201 Created with UserResponseDTO (sem senha)
-            return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
-
-        } catch (EmailAlreadyExistsException e) {
-            log.warn("Tentativa de registro com email já existente: {}", registrationDTO.getEmail());
-
-            // Handle duplicate email error
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Email already registered");
-            errorResponse.put("message", e.getMessage());
-
-            // Return 400 Bad Request with error message
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-
-        } catch (Exception e) {
-            log.error("Erro inesperado ao registrar usuário: {}", registrationDTO.getEmail(), e);
-
-            // Handle other unexpected errors
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Registration failed");
-            errorResponse.put("message", e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
     }
 }

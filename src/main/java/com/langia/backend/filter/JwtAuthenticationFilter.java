@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.langia.backend.dto.SessionData;
 import com.langia.backend.service.AuthenticationService;
+import com.langia.backend.util.TokenExtractor;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -36,6 +37,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private AuthenticationService authenticationService;
 
+    @Autowired
+    private TokenExtractor tokenExtractor;
+
     /**
      * Método principal do filtro que processa cada requisição HTTP.
      *
@@ -54,8 +58,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            // 1. Extrai o token JWT do header Authorization
-            String token = extractTokenFromRequest(request);
+            // 1. Extrai o token JWT do header Authorization usando TokenExtractor
+            String token = tokenExtractor.extractOrNull(request.getHeader("Authorization"));
 
             // 2. Se não houver token, continua sem autenticação (rota pública)
             if (token == null) {
@@ -114,30 +118,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.clearContext();
             filterChain.doFilter(request, response);
         }
-    }
-
-    /**
-     * Extrai o token JWT do header Authorization.
-     *
-     * Espera formato: "Bearer <token>"
-     *
-     * @param request requisição HTTP
-     * @return token JWT extraído ou null se não presente/inválido
-     */
-    private String extractTokenFromRequest(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader("Authorization");
-
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            String token = authorizationHeader.substring(7);
-
-            // Verifica se o token não está vazio
-            if (token != null && !token.trim().isEmpty()) {
-                log.debug("Token JWT extraído do header Authorization");
-                return token;
-            }
-        }
-
-        return null;
     }
 
     /**

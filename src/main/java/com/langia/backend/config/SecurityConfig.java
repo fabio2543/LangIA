@@ -52,7 +52,6 @@ public class SecurityConfig {
                 // Rotas públicas - não exigem autenticação
                 .requestMatchers(
                     "/api/auth/login",      // Login
-                    "/api/auth/register",   // Cadastro via auth
                     "/api/users/register",  // Cadastro de usuários
                     "/h2-console/**",       // Console H2 (apenas dev)
                     "/actuator/**",         // Endpoints de monitoramento
