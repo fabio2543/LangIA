@@ -44,7 +44,7 @@ public class UserService {
         // Valida se email já existe
         if (userRepository.existsByEmail(email)) {
             log.warn("Tentativa de registro com email já existente: {}", email);
-            throw new EmailAlreadyExistsException();
+            throw new EmailAlreadyExistsException("Email already registered: " + email);
         }
 
         // Valida se CPF já existe

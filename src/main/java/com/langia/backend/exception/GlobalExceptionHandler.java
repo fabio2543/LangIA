@@ -27,7 +27,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
         log.warn("Credenciais inválidas: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ErrorResponse("Credenciais inválidas"));
+                .body(new ErrorResponse("Invalid credentials"));
     }
 
     /**
@@ -59,7 +59,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
         log.warn("Email já cadastrado: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse("Email já cadastrado no sistema"));
+                .body(new ErrorResponse(ex.getMessage()));
     }
 
     /**
@@ -107,6 +107,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         log.error("Erro inesperado: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse("Ocorreu um erro inesperado"));
+                .body(new ErrorResponse("An unexpected error occurred"));
     }
 }

@@ -6,7 +6,7 @@ package com.langia.backend.exception;
 public class EmailAlreadyExistsException extends RuntimeException {
 
     public EmailAlreadyExistsException() {
-        super("Email já cadastrado no sistema");
+        super("Email already registered");
     }
 
     public EmailAlreadyExistsException(String message) {
