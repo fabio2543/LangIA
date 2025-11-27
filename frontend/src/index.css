@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* ============================================
+   LANGIA - Design System (Tailwind CSS 4)
+   ============================================ */
+
+@theme {
+  /* Cores Primárias */
+  --color-primary: #6366F1;
+  --color-primary-dark: #4F46E5;
+  --color-primary-light: #E0E7FF;
+
+  /* Cores de Destaque */
+  --color-accent: #818CF8;
+
+  /* Backgrounds */
+  --color-bg: #EEF2FF;
+  --color-bg-warm: #FDF8F3;
+
+  /* Texto */
+  --color-text: #1E1B4B;
+  --color-text-light: #6B7280;
+
+  /* Fontes */
+  --font-sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
+}
+
+/* ============================================
+   Reset e Base
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg-warm);
+  color: var(--color-text);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ============================================
+   Tipografia Base
+   ============================================ */
+
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  line-height: 1.2;
+}
