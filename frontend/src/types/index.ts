@@ -61,3 +61,57 @@ export interface FooterLinks {
   product: string[];
   legal: string[];
 }
+
+// ============================================
+// Auth Types
+// ============================================
+
+export type UserProfile = 'STUDENT' | 'TEACHER' | 'ADMIN';
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  userId: string;
+  name: string;
+  email: string;
+  profile: UserProfile;
+  permissions: string[];
+  expiresIn: number;
+}
+
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+  cpf: string;
+  phone: string;
+  profile: UserProfile;
+}
+
+export interface UserResponse {
+  id: string;
+  name: string;
+  email: string;
+  cpf: string;
+  phone: string;
+  profile: UserProfile;
+}
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  profile: UserProfile;
+  permissions: string[];
+}
+
+export interface AuthState {
+  user: AuthUser | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}

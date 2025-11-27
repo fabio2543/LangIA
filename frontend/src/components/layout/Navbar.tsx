@@ -1,14 +1,19 @@
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../common/Button';
 import { useTranslation, LOCALE_FLAGS, LOCALE_LABELS } from '../../i18n';
+import { useAuth } from '../../context/AuthContext';
 import type { Locale } from '../../types';
 
 const LOCALES: Locale[] = ['pt', 'en', 'es'];
 
 export const Navbar = () => {
   const { t, locale, setLocale } = useTranslation();
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const navLinks = [
     { label: t.navbar.method, href: '#method' },
@@ -18,12 +23,18 @@ export const Navbar = () => {
     { label: t.navbar.business, href: '#business' },
   ];
 
+  const handleLogout = async () => {
+    await logout();
+    setIsUserMenuOpen(false);
+    navigate('/');
+  };
+
   return (
     <nav className="flex justify-between items-center px-6 lg:px-15 py-4 bg-text">
       {/* Logo */}
-      <a href="/" className="text-2xl font-bold text-white">
+      <Link to="/" className="text-2xl font-bold text-white">
         Lang<span className="text-accent">IA</span>
-      </a>
+      </Link>
 
       {/* Desktop Menu */}
       <div className="hidden lg:flex items-center gap-7">
@@ -74,12 +85,52 @@ export const Navbar = () => {
 
         {/* Auth Buttons - Desktop */}
         <div className="hidden lg:flex items-center gap-3">
-          <Button variant="outline" size="md">
-            {t.navbar.login}
-          </Button>
-          <Button variant="primary" size="md">
-            {t.navbar.signup}
-          </Button>
+          {isAuthenticated && user ? (
+            // Usuário logado - Menu dropdown
+            <div className="relative">
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/10 text-white text-sm hover:bg-white/20 transition-colors"
+              >
+                <span className="w-7 h-7 rounded-full bg-primary-light flex items-center justify-center text-sm">
+                  {user.profile === 'TEACHER' ? '👨‍🏫' : '🎓'}
+                </span>
+                <span className="max-w-24 truncate">{user.name.split(' ')[0]}</span>
+              </button>
+
+              {isUserMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-lg overflow-hidden z-50 min-w-40">
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-text hover:bg-bg transition-colors"
+                  >
+                    📊 {t.dashboard.title}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    🚪 {t.dashboard.logout}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Usuário não logado - Botões de Login/Signup
+            <>
+              <Link to="/login">
+                <Button variant="outline" size="md">
+                  {t.navbar.login}
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button variant="primary" size="md">
+                  {t.navbar.signup}
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -107,12 +158,43 @@ export const Navbar = () => {
               </a>
             ))}
             <hr className="border-white/20 my-2" />
-            <Button variant="outline" fullWidth>
-              {t.navbar.login}
-            </Button>
-            <Button variant="primary" fullWidth>
-              {t.navbar.signup}
-            </Button>
+
+            {isAuthenticated && user ? (
+              // Usuário logado - Mobile
+              <>
+                <div className="flex items-center gap-3 text-white mb-2">
+                  <span className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center text-xl">
+                    {user.profile === 'TEACHER' ? '👨‍🏫' : '🎓'}
+                  </span>
+                  <div>
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-gray-300">{user.email}</p>
+                  </div>
+                </div>
+                <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="outline" fullWidth>
+                    📊 {t.dashboard.title}
+                  </Button>
+                </Link>
+                <Button variant="primary" fullWidth onClick={handleLogout}>
+                  🚪 {t.dashboard.logout}
+                </Button>
+              </>
+            ) : (
+              // Usuário não logado - Mobile
+              <>
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="outline" fullWidth>
+                    {t.navbar.login}
+                  </Button>
+                </Link>
+                <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="primary" fullWidth>
+                    {t.navbar.signup}
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
