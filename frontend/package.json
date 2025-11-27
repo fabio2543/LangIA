@@ -13,6 +13,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.17",
     "autoprefixer": "^10.4.22",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
@@ -36,7 +37,6 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
-    "eslint-plugin-tailwindcss": "^3.18.2",
     "globals": "^16.5.0",
     "prettier": "^3.6.2",
     "vite": "^7.2.4"
