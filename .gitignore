@@ -12,6 +12,9 @@ target/
 .settings
 .springBeans
 .sts4-cache
+**/CLAUDE.md
+BACKLOG.md
+**/BACKLOG.md
 
 ### IntelliJ IDEA ###
 .idea
@@ -37,3 +40,4 @@ venv/
 env/
 .env
 .cursor/
+docs/

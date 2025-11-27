@@ -27,7 +27,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "users", uniqueConstraints = {
         @UniqueConstraint(columnNames = "email"),
-        @UniqueConstraint(columnNames = "phone")
+        @UniqueConstraint(columnNames = "phone"),
+        @UniqueConstraint(columnNames = "cpf_string")
 })
 @Getter
 @Setter
@@ -51,7 +52,7 @@ public class User {
     private String email;
 
     @NotBlank
-    @Column(name = "cpf_string", nullable = false, length = 255)
+    @Column(name = "cpf_string", unique = true, nullable = false, length = 255)
     private String cpfString;
 
     @NotBlank
