@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { AuthUser, LoginRequest, LoginResponse, RegisterRequest } from '../types';
-import { authService, handleApiError, type ApiError } from '../services/api';
+import { authService, handleApiError, AUTH_ERROR_EVENT, type ApiError } from '../services/api';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -16,7 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  TOKEN: 'langia-token',
+  // Token agora é gerenciado via cookie HttpOnly (mais seguro contra XSS)
   USER: 'langia-user',
 } as const;
 
@@ -25,19 +25,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
 
-  // Inicializa o estado de auth a partir do localStorage
+  // Inicializa o estado de auth a partir do localStorage (dados do usuário para UI)
+  // O token JWT é gerenciado via cookie HttpOnly pelo backend
   useEffect(() => {
     const initAuth = () => {
-      const storedToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
       const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
 
-      if (storedToken && storedUser) {
+      if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser) as AuthUser;
           setUser(parsedUser);
         } catch {
           // Dados corrompidos, limpa o storage
-          localStorage.removeItem(STORAGE_KEYS.TOKEN);
           localStorage.removeItem(STORAGE_KEYS.USER);
         }
       }
@@ -47,6 +46,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initAuth();
   }, []);
 
+  // Escuta eventos de erro de autenticação (401) do interceptor da API
+  // Isso permite redirecionamento via React Router em vez de window.location
+  useEffect(() => {
+    const handleAuthError = () => {
+      setUser(null);
+      setError({ message: 'Sessão expirada. Faça login novamente.' });
+    };
+
+    window.addEventListener(AUTH_ERROR_EVENT, handleAuthError);
+    return () => window.removeEventListener(AUTH_ERROR_EVENT, handleAuthError);
+  }, []);
+
+  // Salva apenas dados do usuário para UI (token está no cookie HttpOnly)
   const saveAuthData = (response: LoginResponse) => {
     const authUser: AuthUser = {
       id: response.userId,
@@ -56,13 +68,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       permissions: response.permissions,
     };
 
-    localStorage.setItem(STORAGE_KEYS.TOKEN, response.token);
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
     setUser(authUser);
   };
 
+  // Limpa dados locais (cookie é limpo pelo backend no logout)
   const clearAuthData = () => {
-    localStorage.removeItem(STORAGE_KEYS.TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
     setUser(null);
   };

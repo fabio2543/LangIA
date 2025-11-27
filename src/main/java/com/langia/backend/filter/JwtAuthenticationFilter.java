@@ -58,8 +58,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            // 1. Extrai o token JWT do header Authorization usando TokenExtractor
-            String token = tokenExtractor.extractOrNull(request.getHeader("Authorization"));
+            // 1. Extrai o token JWT priorizando cookie HttpOnly, com fallback para header
+            String token = tokenExtractor.extractFromRequest(request);
 
             // 2. Se não houver token, continua sem autenticação (rota pública)
             if (token == null) {

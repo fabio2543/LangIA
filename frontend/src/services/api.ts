@@ -3,30 +3,32 @@ import type { LoginRequest, LoginResponse, RegisterRequest, UserResponse } from 
 
 const API_BASE_URL = '/api';
 
+// Evento customizado para notificar sobre erros de autenticação
+// Permite que o AuthContext reaja sem usar window.location
+export const AUTH_ERROR_EVENT = 'langia:auth-error';
+
+export const dispatchAuthError = () => {
+  window.dispatchEvent(new CustomEvent(AUTH_ERROR_EVENT));
+};
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-});
-
-// Interceptor para adicionar token JWT nas requisições
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('langia-token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+  withCredentials: true, // Essencial para envio automático de cookies HttpOnly
 });
 
 // Interceptor para tratar erros de autenticação
+// Token agora é gerenciado via cookie HttpOnly (mais seguro contra XSS)
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('langia-token');
+      // Limpa dados locais do usuário (token não está mais no localStorage)
       localStorage.removeItem('langia-user');
-      window.location.href = '/login';
+      // Dispara evento para o AuthContext redirecionar via React Router
+      dispatchAuthError();
     }
     return Promise.reject(error);
   }

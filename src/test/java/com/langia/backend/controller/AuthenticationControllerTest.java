@@ -20,15 +20,17 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.langia.backend.config.AuthCookieProperties;
 import com.langia.backend.config.TestSecurityConfig;
 import com.langia.backend.dto.LoginRequestDTO;
 import com.langia.backend.dto.LoginResponseDTO;
 import com.langia.backend.dto.SessionData;
 import com.langia.backend.exception.InvalidCredentialsException;
-import com.langia.backend.exception.MissingTokenException;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.service.AuthenticationService;
 import com.langia.backend.util.TokenExtractor;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Testes para o controller de autenticação.
@@ -48,6 +50,9 @@ class AuthenticationControllerTest {
 
     @MockBean
     private TokenExtractor tokenExtractor;
+
+    @MockBean
+    private AuthCookieProperties cookieProperties;
 
     private LoginRequestDTO validLoginRequest;
     private LoginResponseDTO loginResponse;
@@ -83,14 +88,10 @@ class AuthenticationControllerTest {
 
         validToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test";
 
-        // Configura TokenExtractor para extrair token de "Bearer <token>"
-        when(tokenExtractor.extract("Bearer " + validToken)).thenReturn(validToken);
-        when(tokenExtractor.extract(null)).thenThrow(new MissingTokenException());
-        when(tokenExtractor.extract("")).thenThrow(new MissingTokenException());
-        when(tokenExtractor.extract("InvalidFormat")).thenThrow(new MissingTokenException());
-        when(tokenExtractor.extract("Token " + validToken)).thenThrow(new MissingTokenException());
-        when(tokenExtractor.extract("Bearer ")).thenThrow(new MissingTokenException());
-        when(tokenExtractor.extract(validToken)).thenThrow(new MissingTokenException());
+        // Configura cookie properties para testes
+        when(cookieProperties.getName()).thenReturn("langia_auth");
+        when(cookieProperties.isSecure()).thenReturn(false);
+        when(cookieProperties.getSameSite()).thenReturn("Lax");
     }
 
     // ========== Testes de Login ==========
@@ -183,6 +184,7 @@ class AuthenticationControllerTest {
     @Test
     void deveRealizarLogoutComSucesso() throws Exception {
         // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(validToken);
         when(authenticationService.logout(validToken)).thenReturn(true);
 
         // Act & Assert
@@ -193,24 +195,31 @@ class AuthenticationControllerTest {
 
     @Test
     void deveRetornar401ParaLogoutSemToken() throws Exception {
+        // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(null);
+
         // Act & Assert
         mockMvc.perform(post("/api/auth/logout"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Missing or invalid Authorization header"));
+                .andExpect(jsonPath("$.message").value("No token provided"));
     }
 
     @Test
     void deveRetornar401ParaLogoutComTokenInvalido() throws Exception {
+        // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(null);
+
         // Act & Assert
         mockMvc.perform(post("/api/auth/logout")
                 .header("Authorization", "InvalidFormat"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Missing or invalid Authorization header"));
+                .andExpect(jsonPath("$.message").value("No token provided"));
     }
 
     @Test
     void deveRetornar401ParaSessaoJaExpirada() throws Exception {
         // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(validToken);
         when(authenticationService.logout(validToken)).thenReturn(false);
 
         // Act & Assert
@@ -225,6 +234,7 @@ class AuthenticationControllerTest {
     @Test
     void deveValidarSessaoComSucesso() throws Exception {
         // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(sessionData);
 
         // Act & Assert
@@ -240,6 +250,7 @@ class AuthenticationControllerTest {
     @Test
     void deveRetornar401ParaSessaoInvalida() throws Exception {
         // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(null);
 
         // Act & Assert
@@ -252,19 +263,25 @@ class AuthenticationControllerTest {
 
     @Test
     void deveRetornar401ParaValidacaoSemToken() throws Exception {
+        // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(null);
+
         // Act & Assert
         mockMvc.perform(get("/api/auth/validate"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Missing or invalid Authorization header"));
+                .andExpect(jsonPath("$.valid").value(false));
     }
 
     @Test
     void deveRetornar401ParaValidacaoComTokenMalFormado() throws Exception {
+        // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(null);
+
         // Act & Assert
         mockMvc.perform(get("/api/auth/validate")
                 .header("Authorization", "Token " + validToken))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Missing or invalid Authorization header"));
+                .andExpect(jsonPath("$.valid").value(false));
     }
 
     // ========== Testes de Renovação ==========
@@ -272,6 +289,7 @@ class AuthenticationControllerTest {
     @Test
     void deveRenovarSessaoComSucesso() throws Exception {
         // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(validToken);
         when(authenticationService.renewSession(validToken)).thenReturn(true);
 
         // Act & Assert
@@ -284,6 +302,7 @@ class AuthenticationControllerTest {
     @Test
     void deveRetornar401ParaRenovacaoComTokenInvalido() throws Exception {
         // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(validToken);
         when(authenticationService.renewSession(validToken)).thenReturn(false);
 
         // Act & Assert
@@ -295,10 +314,13 @@ class AuthenticationControllerTest {
 
     @Test
     void deveRetornar401ParaRenovacaoSemToken() throws Exception {
+        // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(null);
+
         // Act & Assert
         mockMvc.perform(post("/api/auth/renew"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Missing or invalid Authorization header"));
+                .andExpect(jsonPath("$.message").value("No token provided"));
     }
 
     // ========== Testes de Formato de Token ==========
@@ -306,6 +328,7 @@ class AuthenticationControllerTest {
     @Test
     void deveExtrairTokenCorretamenteDoHeaderBearer() throws Exception {
         // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(validToken);
         when(authenticationService.validateSession(validToken)).thenReturn(sessionData);
 
         // Act & Assert
@@ -316,6 +339,9 @@ class AuthenticationControllerTest {
 
     @Test
     void deveRejeitarTokenSemPrefixoBearer() throws Exception {
+        // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(null);
+
         // Act & Assert
         mockMvc.perform(get("/api/auth/validate")
                 .header("Authorization", validToken))
@@ -324,6 +350,9 @@ class AuthenticationControllerTest {
 
     @Test
     void deveRejeitarHeaderAuthorizationVazio() throws Exception {
+        // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(null);
+
         // Act & Assert
         mockMvc.perform(get("/api/auth/validate")
                 .header("Authorization", ""))
@@ -332,6 +361,9 @@ class AuthenticationControllerTest {
 
     @Test
     void deveRejeitarHeaderAuthorizationApenasComBearer() throws Exception {
+        // Arrange
+        when(tokenExtractor.extractFromRequest(any(HttpServletRequest.class))).thenReturn(null);
+
         // Act & Assert
         mockMvc.perform(get("/api/auth/validate")
                 .header("Authorization", "Bearer "))

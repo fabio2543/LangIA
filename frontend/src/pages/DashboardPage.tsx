@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
@@ -8,15 +9,28 @@ export const DashboardPage = () => {
   const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  // Redireciona para login se não estiver autenticado
+  useEffect(() => {
+    if (!user && !isLoading) {
+      navigate('/login');
+    }
+  }, [user, isLoading, navigate]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
   };
 
-  // Se não estiver autenticado, redireciona para login
-  if (!user) {
-    navigate('/login');
-    return null;
+  // Mostra loading enquanto verifica autenticação
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen bg-bg-warm flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <p className="text-text-light">Carregando...</p>
+        </div>
+      </div>
+    );
   }
 
   const profileLabel = user.profile === 'TEACHER' ? t.dashboard.teacher : t.dashboard.student;
