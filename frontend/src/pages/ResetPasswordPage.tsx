@@ -51,9 +51,9 @@ export const ResetPasswordPage = () => {
 
       try {
         const response = await passwordService.validateToken(token);
-        if (response.valid && response.maskedEmail) {
+        if (response.valid && response.email) {
           setIsTokenValid(true);
-          setMaskedEmail(response.maskedEmail);
+          setMaskedEmail(response.email);
         } else {
           // Determine error type from response
           if (response.error === 'EXPIRED_TOKEN') {

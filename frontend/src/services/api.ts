@@ -70,7 +70,7 @@ export const authService = {
 
 export interface ValidateTokenResponse {
   valid: boolean;
-  maskedEmail?: string;
+  email?: string;  // Masked email from backend
   error?: string;
   message?: string;
 }
