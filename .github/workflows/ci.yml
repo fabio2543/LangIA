@@ -54,6 +54,18 @@ jobs:
       - name: Compilar projeto
         run: ./mvnw clean compile
 
+      - name: Aguardar serviços estarem prontos
+        run: |
+          echo "Verificando PostgreSQL..."
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U test && break || sleep 1
+          done
+          echo "Verificando Redis..."
+          for i in {1..30}; do
+            nc -z localhost 6379 && break || sleep 1
+          done
+          echo "Serviços prontos!"
+
       - name: Executar testes
         env:
           SPRING_PROFILES_ACTIVE: test
