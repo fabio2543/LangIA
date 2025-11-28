@@ -1,25 +1,93 @@
 name: Deploy LangIA
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["CI - LangIA"]
+    branches: [main]
+    types:
+      - completed
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Só executa se o CI passou com sucesso
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Deploy to VPS
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script_stop: true
+          script: |
+            set -e
+
+            cd ~/LangIA
+
+            # Guarda versão atual para possível rollback
+            CURRENT_JAR=$(ls -t target/*.jar 2>/dev/null | head -1)
+            if [ -n "$CURRENT_JAR" ]; then
+              cp "$CURRENT_JAR" target/backup.jar 2>/dev/null || true
+            fi
+
+            # Atualiza código
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Build com Maven Wrapper
+            chmod +x ./mvnw
+            ./mvnw clean package -DskipTests -q
+
+            # Restart do serviço
+            sudo systemctl restart langia
+
+            # Aguarda serviço iniciar
+            sleep 10
+
+            # Health check
+            if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
+              echo "Deploy concluído com sucesso! Aplicação respondendo."
+            else
+              echo "ERRO: Aplicação não está respondendo!"
+
+              # Tenta rollback
+              if [ -f target/backup.jar ]; then
+                echo "Tentando rollback..."
+                cp target/backup.jar target/langia.jar
+                sudo systemctl restart langia
+                sleep 10
+
+                if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
+                  echo "Rollback realizado com sucesso."
+                else
+                  echo "Rollback falhou. Intervenção manual necessária."
+                fi
+              fi
+
+              exit 1
+            fi
+
+      - name: Notificar falha no deploy
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            cd ~/LangIA
-            git pull origin main
-            mvn clean install -DskipTests
-            systemctl restart langia
-            echo "Deploy concluído com sucesso!"
+            echo "Deploy falhou em $(date)" >> ~/deploy-errors.log
+
+  # Job para notificar quando CI falhou (deploy não executará)
+  notify-ci-failed:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: CI falhou - Deploy cancelado
+        run: |
+          echo "O CI falhou. Deploy não será executado."
+          echo "Verifique os logs do workflow CI - LangIA"
+          exit 1
