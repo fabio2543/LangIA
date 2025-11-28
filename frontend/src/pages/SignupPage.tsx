@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
+import { PasswordStrengthMeter } from '../components/common/PasswordStrengthMeter';
 import { useAuth } from '../context/AuthContext';
+import { usePasswordValidation } from '../hooks/usePasswordValidation';
 import { useTranslation } from '../i18n';
 import type { UserProfile } from '../types';
 import { cn } from '../utils/cn';
@@ -94,6 +96,9 @@ export const SignupPage = () => {
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // Password validation hook
+  const { validationResults, strength, isValid: isPasswordValid, criteriaCount } = usePasswordValidation(formData.password);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     let formattedValue = value;
@@ -134,7 +139,7 @@ export const SignupPage = () => {
 
     if (!formData.password) {
       newErrors.password = t.auth.errors.requiredField;
-    } else if (formData.password.length < 6) {
+    } else if (!isPasswordValid) {
       newErrors.password = t.auth.errors.passwordTooShort;
     }
 
@@ -227,8 +232,8 @@ export const SignupPage = () => {
           disabled={isLoading}
         />
 
-        {/* Senha e Confirmar Senha lado a lado em desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Senha */}
+        <div className="space-y-2">
           <Input
             name="password"
             type="password"
@@ -240,6 +245,27 @@ export const SignupPage = () => {
             autoComplete="new-password"
             disabled={isLoading}
           />
+
+          {/* Password strength meter */}
+          {formData.password && (
+            <PasswordStrengthMeter strength={strength} criteriaCount={criteriaCount} />
+          )}
+        </div>
+
+        {/* Password requirements checklist */}
+        <div className="space-y-2 text-sm">
+          <p className="font-medium text-text-light">{t.auth.resetPassword.requirementsTitle}</p>
+          <ul className="space-y-1.5">
+            <RequirementItem met={validationResults.minLength} label={t.auth.resetPassword.reqMinLength} />
+            <RequirementItem met={validationResults.hasUppercase} label={t.auth.resetPassword.reqUppercase} />
+            <RequirementItem met={validationResults.hasLowercase} label={t.auth.resetPassword.reqLowercase} />
+            <RequirementItem met={validationResults.hasNumber} label={t.auth.resetPassword.reqNumber} />
+            <RequirementItem met={validationResults.hasSpecial} label={t.auth.resetPassword.reqSpecial} />
+          </ul>
+        </div>
+
+        {/* Confirmar Senha */}
+        <div className="space-y-2">
           <Input
             name="confirmPassword"
             type="password"
@@ -251,6 +277,31 @@ export const SignupPage = () => {
             autoComplete="new-password"
             disabled={isLoading}
           />
+
+          {/* Password match indicator */}
+          {formData.confirmPassword.length > 0 && (
+            <div className={cn(
+              'flex items-center gap-2 text-sm',
+              formData.password === formData.confirmPassword ? 'text-green-600' : 'text-red-500'
+            )}>
+              <span className="flex-shrink-0">
+                {formData.password === formData.confirmPassword ? (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </span>
+              <span>
+                {formData.password === formData.confirmPassword
+                  ? t.auth.errors.passwordMatch
+                  : t.auth.errors.passwordMismatch}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* CPF e Telefone lado a lado em desktop */}
@@ -365,3 +416,21 @@ export const SignupPage = () => {
     </AuthLayout>
   );
 };
+
+// Helper component for requirement items
+const RequirementItem = ({ met, label }: { met: boolean; label: string }) => (
+  <li className={cn('flex items-center gap-2', met ? 'text-green-600' : 'text-text-light')}>
+    <span className="flex-shrink-0">
+      {met ? (
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      ) : (
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+        </svg>
+      )}
+    </span>
+    <span>{label}</span>
+  </li>
+);

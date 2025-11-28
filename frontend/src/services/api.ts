@@ -65,6 +65,40 @@ export const authService = {
 };
 
 // ============================================
+// Password Reset Endpoints
+// ============================================
+
+export interface ValidateTokenResponse {
+  valid: boolean;
+  email?: string;  // Masked email from backend
+  error?: string;
+  message?: string;
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+}
+
+export const passwordService = {
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await api.post('/auth/password/forgot', { email });
+    return response.data;
+  },
+
+  validateToken: async (token: string): Promise<ValidateTokenResponse> => {
+    const response = await api.get(`/auth/password/reset/${token}`);
+    return response.data;
+  },
+
+  resetPassword: async (token: string, password: string, passwordConfirmation: string): Promise<ResetPasswordResponse> => {
+    const response = await api.post('/auth/password/reset', { token, password, passwordConfirmation });
+    return response.data;
+  },
+};
+
+// ============================================
 // Error Handler
 // ============================================
 
