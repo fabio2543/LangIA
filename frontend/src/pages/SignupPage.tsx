@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
+import { PasswordStrengthMeter } from '../components/common/PasswordStrengthMeter';
 import { useAuth } from '../context/AuthContext';
+import { usePasswordValidation } from '../hooks/usePasswordValidation';
 import { useTranslation } from '../i18n';
 import type { UserProfile } from '../types';
 import { cn } from '../utils/cn';
@@ -94,6 +96,9 @@ export const SignupPage = () => {
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // Password validation hook
+  const { validationResults, strength, isValid: isPasswordValid, criteriaCount } = usePasswordValidation(formData.password);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     let formattedValue = value;
@@ -134,7 +139,7 @@ export const SignupPage = () => {
 
     if (!formData.password) {
       newErrors.password = t.auth.errors.requiredField;
-    } else if (formData.password.length < 6) {
+    } else if (!isPasswordValid) {
       newErrors.password = t.auth.errors.passwordTooShort;
     }
 
@@ -227,32 +232,51 @@ export const SignupPage = () => {
           disabled={isLoading}
         />
 
-        {/* Senha e Confirmar Senha lado a lado em desktop */}
+        {/* Senha */}
         <div className="space-y-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              name="password"
-              type="password"
-              label={t.auth.signup.passwordLabel}
-              placeholder={t.auth.signup.passwordPlaceholder}
-              value={formData.password}
-              onChange={handleChange}
-              error={errors.password}
-              autoComplete="new-password"
-              disabled={isLoading}
-            />
-            <Input
-              name="confirmPassword"
-              type="password"
-              label={t.auth.signup.confirmPasswordLabel}
-              placeholder={t.auth.signup.confirmPasswordPlaceholder}
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              error={errors.confirmPassword}
-              autoComplete="new-password"
-              disabled={isLoading}
-            />
-          </div>
+          <Input
+            name="password"
+            type="password"
+            label={t.auth.signup.passwordLabel}
+            placeholder={t.auth.signup.passwordPlaceholder}
+            value={formData.password}
+            onChange={handleChange}
+            error={errors.password}
+            autoComplete="new-password"
+            disabled={isLoading}
+          />
+
+          {/* Password strength meter */}
+          {formData.password && (
+            <PasswordStrengthMeter strength={strength} criteriaCount={criteriaCount} />
+          )}
+        </div>
+
+        {/* Password requirements checklist */}
+        <div className="space-y-2 text-sm">
+          <p className="font-medium text-text-light">{t.auth.resetPassword.requirementsTitle}</p>
+          <ul className="space-y-1.5">
+            <RequirementItem met={validationResults.minLength} label={t.auth.resetPassword.reqMinLength} />
+            <RequirementItem met={validationResults.hasUppercase} label={t.auth.resetPassword.reqUppercase} />
+            <RequirementItem met={validationResults.hasLowercase} label={t.auth.resetPassword.reqLowercase} />
+            <RequirementItem met={validationResults.hasNumber} label={t.auth.resetPassword.reqNumber} />
+            <RequirementItem met={validationResults.hasSpecial} label={t.auth.resetPassword.reqSpecial} />
+          </ul>
+        </div>
+
+        {/* Confirmar Senha */}
+        <div className="space-y-2">
+          <Input
+            name="confirmPassword"
+            type="password"
+            label={t.auth.signup.confirmPasswordLabel}
+            placeholder={t.auth.signup.confirmPasswordPlaceholder}
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            error={errors.confirmPassword}
+            autoComplete="new-password"
+            disabled={isLoading}
+          />
 
           {/* Password match indicator */}
           {formData.confirmPassword.length > 0 && (
@@ -392,3 +416,21 @@ export const SignupPage = () => {
     </AuthLayout>
   );
 };
+
+// Helper component for requirement items
+const RequirementItem = ({ met, label }: { met: boolean; label: string }) => (
+  <li className={cn('flex items-center gap-2', met ? 'text-green-600' : 'text-text-light')}>
+    <span className="flex-shrink-0">
+      {met ? (
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      ) : (
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+        </svg>
+      )}
+    </span>
+    <span>{label}</span>
+  </li>
+);
