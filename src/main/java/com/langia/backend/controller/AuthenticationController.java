@@ -59,13 +59,7 @@ public class AuthenticationController {
         LoginResponseDTO response = authenticationService.login(loginRequest);
 
         // Cria cookie HttpOnly com o token JWT
-        ResponseCookie authCookie = ResponseCookie.from(cookieProperties.getName(), response.getToken())
-                .httpOnly(true)
-                .secure(cookieProperties.isSecure())
-                .sameSite(cookieProperties.getSameSite())
-                .path("/")
-                .maxAge(Duration.ofMillis(jwtExpirationMs))
-                .build();
+        ResponseCookie authCookie = buildAuthCookie(response.getToken(), Duration.ofMillis(jwtExpirationMs));
 
         log.info("Login bem-sucedido via API para: {}", loginRequest.getEmail());
         return ResponseEntity.ok()
@@ -82,10 +76,7 @@ public class AuthenticationController {
      */
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
-        String token = tokenExtractor.extractFromRequest(request);
-        if (token == null) {
-            throw new InvalidSessionException("No token provided");
-        }
+        String token = extractTokenOrThrow(request);
 
         boolean loggedOut = authenticationService.logout(token);
         if (!loggedOut) {
@@ -93,13 +84,7 @@ public class AuthenticationController {
         }
 
         // Limpa o cookie de autenticação
-        ResponseCookie clearCookie = ResponseCookie.from(cookieProperties.getName(), "")
-                .httpOnly(true)
-                .secure(cookieProperties.isSecure())
-                .sameSite(cookieProperties.getSameSite())
-                .path("/")
-                .maxAge(0)
-                .build();
+        ResponseCookie clearCookie = buildClearCookie();
 
         log.info("Logout realizado com sucesso via API");
         return ResponseEntity.noContent()
@@ -141,10 +126,7 @@ public class AuthenticationController {
      */
     @PostMapping("/renew")
     public ResponseEntity<MessageResponse> renewSession(HttpServletRequest request) {
-        String token = tokenExtractor.extractFromRequest(request);
-        if (token == null) {
-            throw new InvalidSessionException("No token provided");
-        }
+        String token = extractTokenOrThrow(request);
 
         boolean renewed = authenticationService.renewSession(token);
         if (!renewed) {
@@ -153,5 +135,48 @@ public class AuthenticationController {
 
         log.debug("Sessão renovada com sucesso via API");
         return ResponseEntity.ok(new MessageResponse("Session renewed successfully"));
+    }
+
+    // ========== Helper Methods ==========
+
+    /**
+     * Constrói um cookie de autenticação com as configurações padrão.
+     *
+     * @param token valor do token JWT
+     * @param maxAge duração do cookie
+     * @return cookie configurado
+     */
+    private ResponseCookie buildAuthCookie(String token, Duration maxAge) {
+        return ResponseCookie.from(cookieProperties.getName(), token)
+                .httpOnly(true)
+                .secure(cookieProperties.isSecure())
+                .sameSite(cookieProperties.getSameSite())
+                .path("/")
+                .maxAge(maxAge)
+                .build();
+    }
+
+    /**
+     * Constrói um cookie vazio para limpar a autenticação.
+     *
+     * @return cookie de limpeza
+     */
+    private ResponseCookie buildClearCookie() {
+        return buildAuthCookie("", Duration.ZERO);
+    }
+
+    /**
+     * Extrai o token da requisição ou lança exceção se não encontrado.
+     *
+     * @param request requisição HTTP
+     * @return token extraído
+     * @throws InvalidSessionException se nenhum token for encontrado
+     */
+    private String extractTokenOrThrow(HttpServletRequest request) {
+        String token = tokenExtractor.extractFromRequest(request);
+        if (token == null) {
+            throw new InvalidSessionException("No token provided");
+        }
+        return token;
     }
 }
