@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.langia.backend.dto.ErrorResponse;
+import com.langia.backend.dto.RateLimitExceededResponseDTO;
+import com.langia.backend.dto.ResetPasswordResponseDTO;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,6 +82,43 @@ public class GlobalExceptionHandler {
         log.warn("Telefone já cadastrado: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse("Telefone já cadastrado no sistema"));
+    }
+
+    // ========== Exceções de Recuperação de Senha ==========
+
+    /**
+     * Trata exceções de rate limit excedido.
+     * Retorna 429 Too Many Requests com header Retry-After.
+     */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<RateLimitExceededResponseDTO> handleRateLimitExceeded(
+            RateLimitExceededException ex) {
+        log.warn("Rate limit exceeded: {} seconds until reset", ex.getRetryAfterSeconds());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(RateLimitExceededResponseDTO.create(ex.getRetryAfterSeconds()));
+    }
+
+    /**
+     * Trata exceções de token de reset inválido ou expirado.
+     */
+    @ExceptionHandler(InvalidResetTokenException.class)
+    public ResponseEntity<ResetPasswordResponseDTO> handleInvalidResetToken(
+            InvalidResetTokenException ex) {
+        log.warn("Invalid reset token: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResetPasswordResponseDTO.tokenInvalid());
+    }
+
+    /**
+     * Trata exceções de senha recentemente utilizada.
+     */
+    @ExceptionHandler(PasswordRecentlyUsedException.class)
+    public ResponseEntity<ResetPasswordResponseDTO> handlePasswordRecentlyUsed(
+            PasswordRecentlyUsedException ex) {
+        log.warn("Password recently used: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResetPasswordResponseDTO.passwordRecentlyUsed());
     }
 
     // ========== Exceções de Validação ==========

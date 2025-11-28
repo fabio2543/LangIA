@@ -51,11 +51,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Rotas públicas - não exigem autenticação
                 .requestMatchers(
-                    "/api/auth/login",      // Login
-                    "/api/users/register",  // Cadastro de usuários
-                    "/h2-console/**",       // Console H2 (apenas dev)
-                    "/actuator/**",         // Endpoints de monitoramento
-                    "/error"                // Página de erro
+                    "/api/auth/login",          // Login
+                    "/api/auth/password/**",    // Recuperação de senha
+                    "/api/users/register",      // Cadastro de usuários
+                    "/h2-console/**",           // Console H2 (apenas dev)
+                    "/actuator/**",             // Endpoints de monitoramento
+                    "/error"                    // Página de erro
                 ).permitAll()
 
                 // Todas as outras rotas exigem autenticação
