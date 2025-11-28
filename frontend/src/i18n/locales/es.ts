@@ -123,7 +123,7 @@ export const es = {
       emailLabel: 'Email',
       emailPlaceholder: 'tu@email.com',
       passwordLabel: 'Contraseña',
-      passwordPlaceholder: 'Mínimo 6 caracteres',
+      passwordPlaceholder: 'Mínimo 8 caracteres',
       confirmPasswordLabel: 'Confirmar contraseña',
       confirmPasswordPlaceholder: 'Ingresa nuevamente',
       cpfLabel: 'CPF',
