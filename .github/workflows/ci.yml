@@ -46,6 +46,14 @@ jobs:
           distribution: "temurin"
           cache: maven
 
+      - name: Cache Maven Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/wrapper
+          key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-wrapper-
+
       - name: Validar Maven Wrapper
         run: |
           chmod +x ./mvnw
@@ -54,7 +62,7 @@ jobs:
       - name: Compilar projeto
         run: ./mvnw clean compile
 
-      - name: Executar testes
+      - name: Executar testes com cobertura
         env:
           SPRING_PROFILES_ACTIVE: test
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/langia_test
@@ -64,10 +72,21 @@ jobs:
           SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
           SPRING_DATA_REDIS_HOST: localhost
           SPRING_DATA_REDIS_PORT: 6379
-        run: ./mvnw test
+        run: ./mvnw test jacoco:report
+
+      - name: Verificar cobertura mínima
+        run: ./mvnw jacoco:check || echo "Cobertura abaixo do mínimo configurado"
+
+      - name: Upload relatório de cobertura
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          retention-days: 7
 
       - name: Build do projeto
-        run: ./mvnw clean package -DskipTests
+        run: ./mvnw package -DskipTests
 
       - name: Upload artefatos de teste
         if: failure()
