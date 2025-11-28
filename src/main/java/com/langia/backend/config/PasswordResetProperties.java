@@ -59,6 +59,12 @@ public class PasswordResetProperties {
         private int maxAttemptsPerIp = 10;
 
         /**
+         * Máximo de tentativas por email.
+         * Default: 5 tentativas.
+         */
+        private int maxAttemptsPerEmail = 5;
+
+        /**
          * Janela de tempo para rate limiting em horas.
          * Default: 1 hora.
          */

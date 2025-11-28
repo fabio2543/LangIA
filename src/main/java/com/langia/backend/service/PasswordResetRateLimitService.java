@@ -23,6 +23,7 @@ public class PasswordResetRateLimitService {
     private final PasswordResetProperties properties;
 
     private static final String IP_KEY_PREFIX = "reset_limit:ip:";
+    private static final String EMAIL_KEY_PREFIX = "reset_limit:email:";
 
     /**
      * Verifica se o IP está bloqueado por excesso de tentativas.
@@ -104,5 +105,75 @@ public class PasswordResetRateLimitService {
         String key = IP_KEY_PREFIX + ipAddress;
         redisTemplate.delete(key);
         log.info("Reset rate limit for IP {}", ipAddress);
+    }
+
+    // ============================================
+    // Rate Limiting por Email
+    // ============================================
+
+    /**
+     * Verifica se o email atingiu o limite de tentativas.
+     * Nota: Não bloqueia, apenas indica se deve ignorar silenciosamente.
+     *
+     * @param email Email normalizado
+     * @return true se limite atingido, false se pode prosseguir
+     */
+    public boolean isEmailLimitReached(String email) {
+        String key = EMAIL_KEY_PREFIX + email;
+        String count = redisTemplate.opsForValue().get(key);
+
+        if (count == null) {
+            return false;
+        }
+
+        int attempts = Integer.parseInt(count);
+        boolean limited = attempts >= properties.getRateLimit().getMaxAttemptsPerEmail();
+
+        if (limited) {
+            log.info("Email {} rate limited - {} attempts", email, attempts);
+        }
+
+        return limited;
+    }
+
+    /**
+     * Registra uma tentativa de recuperação de senha por email.
+     *
+     * @param email Email normalizado
+     */
+    public void recordEmailAttempt(String email) {
+        String key = EMAIL_KEY_PREFIX + email;
+        Long count = redisTemplate.opsForValue().increment(key);
+
+        // Define TTL apenas na primeira tentativa
+        if (count != null && count == 1) {
+            Duration window = Duration.ofHours(properties.getRateLimit().getWindowHours());
+            redisTemplate.expire(key, window);
+            log.debug("Started rate limit window for email {}", email);
+        }
+
+        log.debug("Recorded attempt {} for email {}", count, email);
+    }
+
+    /**
+     * Registra tentativas tanto por IP quanto por email.
+     *
+     * @param ipAddress Endereço IP do cliente
+     * @param email Email normalizado
+     */
+    public void recordAttempt(String ipAddress, String email) {
+        recordAttempt(ipAddress);
+        recordEmailAttempt(email);
+    }
+
+    /**
+     * Reseta o contador de tentativas para um email (uso administrativo).
+     *
+     * @param email Email do cliente
+     */
+    public void resetEmailAttempts(String email) {
+        String key = EMAIL_KEY_PREFIX + email;
+        redisTemplate.delete(key);
+        log.info("Reset rate limit for email {}", email);
     }
 }
