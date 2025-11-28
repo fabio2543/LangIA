@@ -66,4 +66,17 @@ public class ResetPasswordResponseDTO {
             .errors(errors)
             .build();
     }
+
+    /**
+     * Cria uma resposta para erros de validação de senha (complexidade).
+     *
+     * @param errors String com erros de validação
+     */
+    public static ResetPasswordResponseDTO passwordValidationError(String errors) {
+        return ResetPasswordResponseDTO.builder()
+            .success(false)
+            .error("PASSWORD_VALIDATION_FAILED")
+            .message(errors)
+            .build();
+    }
 }

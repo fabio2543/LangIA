@@ -121,6 +121,17 @@ public class GlobalExceptionHandler {
                 .body(ResetPasswordResponseDTO.passwordRecentlyUsed());
     }
 
+    /**
+     * Trata exceções de validação de complexidade de senha.
+     */
+    @ExceptionHandler(PasswordValidationException.class)
+    public ResponseEntity<ResetPasswordResponseDTO> handlePasswordValidation(
+            PasswordValidationException ex) {
+        log.warn("Password validation failed: {}", ex.getErrors());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResetPasswordResponseDTO.passwordValidationError(ex.getErrors()));
+    }
+
     // ========== Exceções de Validação ==========
 
     /**

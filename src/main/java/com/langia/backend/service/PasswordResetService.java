@@ -14,6 +14,7 @@ import com.langia.backend.config.PasswordResetProperties;
 import com.langia.backend.dto.ValidateTokenResponseDTO;
 import com.langia.backend.exception.InvalidResetTokenException;
 import com.langia.backend.exception.PasswordRecentlyUsedException;
+import com.langia.backend.exception.PasswordValidationException;
 import com.langia.backend.exception.RateLimitExceededException;
 import com.langia.backend.model.PasswordHistory;
 import com.langia.backend.model.PasswordResetToken;
@@ -133,6 +134,12 @@ public class PasswordResetService {
      */
     @Transactional(readOnly = true)
     public ValidateTokenResponseDTO validateToken(String token) {
+        // Validar entrada antes de calcular hash
+        if (token == null || token.isBlank()) {
+            log.warn("Empty or null token attempted");
+            return ValidateTokenResponseDTO.invalid();
+        }
+
         String tokenHash = TokenHashUtil.hashToken(token);
 
         Optional<PasswordResetToken> tokenOptional = tokenRepository.findByTokenHash(tokenHash);
@@ -199,7 +206,7 @@ public class PasswordResetService {
         List<String> errors = validatePasswordComplexity(newPassword);
         if (!errors.isEmpty()) {
             log.warn("Password complexity validation failed: {}", errors);
-            throw new IllegalArgumentException(String.join(", ", errors));
+            throw new PasswordValidationException(String.join(", ", errors));
         }
 
         // 3. Verificar histórico de senhas
