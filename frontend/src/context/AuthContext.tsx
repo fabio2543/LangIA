@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { AuthUser, LoginRequest, LoginResponse, RegisterRequest } from '../types';
+import type { AuthUser, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from '../types';
 import { authService, handleApiError, AUTH_ERROR_EVENT, type ApiError } from '../services/api';
 
 interface AuthContextType {
@@ -7,7 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   error: ApiError | null;
   clearError: () => void;
@@ -94,14 +94,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const register = useCallback(async (data: RegisterRequest) => {
+  const register = useCallback(async (data: RegisterRequest): Promise<RegisterResponse> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      await authService.register(data);
-      // Após registro bem-sucedido, faz login automaticamente
-      await login({ email: data.email, password: data.password });
+      const response = await authService.register(data);
+      // Retorna a resposta para que o componente possa redirecionar
+      // para a página de verificação de e-mail
+      return response;
     } catch (err) {
       const apiError = handleApiError(err);
       setError(apiError);
@@ -109,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [login]);
+  }, []);
 
   const logout = useCallback(async () => {
     setIsLoading(true);

@@ -49,14 +49,15 @@ public class SecurityConfig {
 
             // Configura autorização de requisições
             .authorizeHttpRequests(auth -> auth
-                // Rotas públicas - não exigem autenticação
+                // Rotas publicas - nao exigem autenticacao
                 .requestMatchers(
                     "/api/auth/login",          // Login
-                    "/api/auth/password/**",    // Recuperação de senha
-                    "/api/users/register",      // Cadastro de usuários
+                    "/api/auth/password/**",    // Recuperacao de senha
+                    "/api/auth/email/**",       // Verificacao de e-mail
+                    "/api/users/register",      // Cadastro de usuarios
                     "/h2-console/**",           // Console H2 (apenas dev)
                     "/actuator/**",             // Endpoints de monitoramento
-                    "/error"                    // Página de erro
+                    "/error"                    // Pagina de erro
                 ).permitAll()
 
                 // Todas as outras rotas exigem autenticação

@@ -11,9 +11,11 @@ import org.springframework.stereotype.Service;
 import com.langia.backend.dto.LoginRequestDTO;
 import com.langia.backend.dto.LoginResponseDTO;
 import com.langia.backend.dto.SessionData;
+import com.langia.backend.exception.EmailNotVerifiedException;
 import com.langia.backend.exception.InvalidCredentialsException;
 import com.langia.backend.model.User;
 import com.langia.backend.repository.UserRepository;
+import com.langia.backend.util.EmailMaskUtil;
 import com.langia.backend.util.JwtUtil;
 import com.langia.backend.util.PermissionMapper;
 
@@ -80,7 +82,13 @@ public class AuthenticationService {
             throw new InvalidCredentialsException();
         }
 
-        log.info("Credenciais válidas para usuário: {} (ID: {})", user.getEmail(), user.getId());
+        // 3. Verifica se o e-mail esta verificado
+        if (!user.isEmailVerified()) {
+            log.warn("Tentativa de login com e-mail nao verificado: {}", loginRequest.getEmail());
+            throw new EmailNotVerifiedException(user.getId(), EmailMaskUtil.mask(user.getEmail()));
+        }
+
+        log.info("Credenciais validas para usuario: {} (ID: {})", user.getEmail(), user.getId());
 
         // 3. Gera token JWT
         String token = jwtUtil.generateToken(user);

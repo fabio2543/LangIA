@@ -99,11 +99,35 @@ public class EmailService {
     }
 
     /**
+     * Envia email de verificacao de e-mail.
+     *
+     * @param toEmail        Email do destinatario
+     * @param userName       Nome do usuario
+     * @param verifyLink     Link para verificacao
+     * @param expirationTime Tempo de expiracao do link
+     */
+    public void sendEmailVerificationEmail(String toEmail, String userName, String verifyLink, String expirationTime) {
+        log.info("Preparing email verification for: {}", maskEmail(toEmail));
+
+        Context context = new Context();
+        context.setVariable("userName", userName);
+        context.setVariable("verifyLink", verifyLink);
+        context.setVariable("expirationTime", expirationTime);
+        context.setVariable("platformName", platformName);
+        context.setVariable("supportEmail", supportEmail);
+
+        String html = templateEngine.process("email/email-verification", context);
+        String subject = "Confirme seu e-mail - " + platformName;
+
+        sendHtmlEmail(toEmail, subject, html);
+    }
+
+    /**
      * Envia email HTML usando Resend API.
      *
-     * @param to      Destinatário
+     * @param to      Destinatario
      * @param subject Assunto
-     * @param html    Conteúdo HTML
+     * @param html    Conteudo HTML
      */
     private void sendHtmlEmail(String to, String subject, String html) {
         if (resend == null) {

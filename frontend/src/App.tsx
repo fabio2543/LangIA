@@ -6,6 +6,8 @@ import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { EmailConfirmationPage } from './pages/EmailConfirmationPage';
 import { DashboardPage } from './pages/DashboardPage';
 
 function App() {
@@ -19,6 +21,8 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/email-confirmed" element={<EmailConfirmationPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
           </Routes>
         </AuthProvider>

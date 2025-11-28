@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios, { type AxiosError } from 'axios';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
+import type { PendingVerificationResponse } from '../types';
 
 interface FormErrors {
   email?: string;
@@ -47,7 +49,24 @@ export const LoginPage = () => {
     try {
       await login({ email, password });
       navigate('/dashboard');
-    } catch {
+    } catch (error) {
+      // Verifica se é erro de e-mail não verificado (403)
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError<PendingVerificationResponse>;
+        if (
+          axiosError.response?.status === 403 &&
+          axiosError.response?.data?.emailVerificationRequired
+        ) {
+          // Redireciona para página de verificação de e-mail
+          navigate('/verify-email', {
+            state: {
+              userId: axiosError.response.data.userId,
+              maskedEmail: axiosError.response.data.maskedEmail,
+            },
+          });
+          return;
+        }
+      }
       setErrors({ general: t.auth.errors.invalidCredentials });
     }
   };

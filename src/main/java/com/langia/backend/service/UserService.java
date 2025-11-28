@@ -21,6 +21,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
 
     /**
      * Registra um novo usuário no sistema.
@@ -74,7 +75,11 @@ public class UserService {
 
         // Salva no banco de dados
         User savedUser = userRepository.save(user);
-        log.info("Usuário registrado com sucesso: {} (ID: {})", email, savedUser.getId());
+        log.info("Usuario registrado com sucesso: {} (ID: {})", email, savedUser.getId());
+
+        // Envia e-mail de verificacao
+        emailVerificationService.sendVerificationEmail(savedUser);
+        log.info("E-mail de verificacao enviado para: {}", email);
 
         return savedUser;
     }

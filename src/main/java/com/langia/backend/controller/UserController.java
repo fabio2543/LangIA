@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.langia.backend.dto.RegisterResponseDTO;
 import com.langia.backend.dto.UserRegistrationDTO;
-import com.langia.backend.dto.UserResponseDTO;
 import com.langia.backend.model.User;
 import com.langia.backend.service.UserService;
 
@@ -29,14 +29,15 @@ public class UserController {
     private final UserService userService;
 
     /**
-     * Registra um novo usuário no sistema.
+     * Registra um novo usuario no sistema.
+     * Apos o registro, um e-mail de verificacao e enviado.
      *
-     * @param registrationDTO dados de registro do usuário
-     * @return UserResponseDTO com status 201 Created
+     * @param registrationDTO dados de registro do usuario
+     * @return RegisterResponseDTO indicando verificacao pendente
      */
     @PostMapping("/register")
-    public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
-        log.info("Recebida requisição de registro para email: {}", registrationDTO.getEmail());
+    public ResponseEntity<RegisterResponseDTO> registerUser(@Valid @RequestBody UserRegistrationDTO registrationDTO) {
+        log.info("Recebida requisicao de registro para email: {}", registrationDTO.getEmail());
 
         User registeredUser = userService.registerUser(
                 registrationDTO.getName(),
@@ -46,10 +47,10 @@ public class UserController {
                 registrationDTO.getPhone(),
                 registrationDTO.getProfile());
 
-        log.info("Usuário registrado com sucesso: {} (ID: {})",
+        log.info("Usuario registrado com verificacao pendente: {} (ID: {})",
                 registeredUser.getEmail(), registeredUser.getId());
 
-        UserResponseDTO responseDTO = UserResponseDTO.fromUser(registeredUser);
+        RegisterResponseDTO responseDTO = RegisterResponseDTO.pendingVerification(registeredUser);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
     }

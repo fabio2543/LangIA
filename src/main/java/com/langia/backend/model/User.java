@@ -68,6 +68,21 @@ public class User {
     @Column(name = "phone", unique = true, nullable = false)
     private String phone;
 
+    /**
+     * Indica se o e-mail do usuário foi verificado.
+     * Usuários não verificados não podem fazer login.
+     */
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    /**
+     * Data/hora em que o e-mail foi verificado.
+     * Null se ainda não foi verificado.
+     */
+    @Column(name = "email_verified_at")
+    private LocalDateTime emailVerifiedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
