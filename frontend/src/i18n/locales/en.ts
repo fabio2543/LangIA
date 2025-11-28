@@ -150,6 +150,7 @@ export const en = {
       invalidPhone: 'Invalid phone number',
       passwordTooShort: 'Password must be at least 6 characters',
       passwordMismatch: 'Passwords do not match',
+      passwordMatch: 'Passwords match',
       requiredField: 'Required field',
       termsRequired: 'You must accept the terms of use',
       genericError: 'An error occurred. Please try again.',

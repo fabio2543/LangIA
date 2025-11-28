@@ -150,6 +150,7 @@ export const es = {
       invalidPhone: 'Teléfono inválido',
       passwordTooShort: 'La contraseña debe tener al menos 6 caracteres',
       passwordMismatch: 'Las contraseñas no coinciden',
+      passwordMatch: 'Las contraseñas coinciden',
       requiredField: 'Campo obligatorio',
       termsRequired: 'Debes aceptar los términos de uso',
       genericError: 'Ocurrió un error. Inténtalo de nuevo.',

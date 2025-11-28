@@ -325,15 +325,42 @@ export const ResetPasswordPage = () => {
         </div>
 
         {/* Confirm password input */}
-        <Input
-          type="password"
-          label={t.auth.resetPassword.confirmPasswordLabel}
-          placeholder={t.auth.resetPassword.confirmPasswordPlaceholder}
-          value={passwordConfirmation}
-          onChange={(e) => setPasswordConfirmation(e.target.value)}
-          autoComplete="new-password"
-          disabled={isSubmitting}
-        />
+        <div className="space-y-2">
+          <Input
+            type="password"
+            label={t.auth.resetPassword.confirmPasswordLabel}
+            placeholder={t.auth.resetPassword.confirmPasswordPlaceholder}
+            value={passwordConfirmation}
+            onChange={(e) => setPasswordConfirmation(e.target.value)}
+            autoComplete="new-password"
+            disabled={isSubmitting}
+          />
+
+          {/* Password match indicator */}
+          {passwordConfirmation.length > 0 && (
+            <div className={cn(
+              'flex items-center gap-2 text-sm',
+              password === passwordConfirmation ? 'text-green-600' : 'text-red-500'
+            )}>
+              <span className="flex-shrink-0">
+                {password === passwordConfirmation ? (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </span>
+              <span>
+                {password === passwordConfirmation
+                  ? t.auth.errors.passwordMatch
+                  : t.auth.errors.passwordMismatch}
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Submit button */}
         <Button
