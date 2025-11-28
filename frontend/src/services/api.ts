@@ -1,5 +1,13 @@
 import axios, { type AxiosError } from 'axios';
-import type { LoginRequest, LoginResponse, RegisterRequest, UserResponse } from '../types';
+import type {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
+  ResendVerificationRequest,
+  ResendVerificationResponse,
+  EmailVerificationResponse,
+} from '../types';
 
 const API_BASE_URL = '/api';
 
@@ -44,8 +52,8 @@ export const authService = {
     return response.data;
   },
 
-  register: async (data: RegisterRequest): Promise<UserResponse> => {
-    const response = await api.post<UserResponse>('/users/register', data);
+  register: async (data: RegisterRequest): Promise<RegisterResponse> => {
+    const response = await api.post<RegisterResponse>('/users/register', data);
     return response.data;
   },
 
@@ -94,6 +102,22 @@ export const passwordService = {
 
   resetPassword: async (token: string, password: string, passwordConfirmation: string): Promise<ResetPasswordResponse> => {
     const response = await api.post('/auth/password/reset', { token, password, passwordConfirmation });
+    return response.data;
+  },
+};
+
+// ============================================
+// Email Verification Endpoints
+// ============================================
+
+export const emailVerificationService = {
+  confirmEmail: async (token: string): Promise<EmailVerificationResponse> => {
+    const response = await api.get<EmailVerificationResponse>(`/auth/email/confirm/${token}`);
+    return response.data;
+  },
+
+  resendVerification: async (data: ResendVerificationRequest): Promise<ResendVerificationResponse> => {
+    const response = await api.post<ResendVerificationResponse>('/auth/email/resend', data);
     return response.data;
   },
 };

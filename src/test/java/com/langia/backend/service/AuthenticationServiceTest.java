@@ -67,7 +67,7 @@ class AuthenticationServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Configuração do usuário de teste
+        // Configuração do usuário de teste (com email verificado para permitir login)
         testUser = User.builder()
                 .id(UUID.randomUUID())
                 .name("Test User")
@@ -76,6 +76,7 @@ class AuthenticationServiceTest {
                 .profile(UserProfile.STUDENT)
                 .cpfString("11144477735")
                 .phone("11987654321")
+                .emailVerified(true)
                 .build();
 
         // Configuração do request de login

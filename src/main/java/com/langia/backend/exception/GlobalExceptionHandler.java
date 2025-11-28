@@ -6,8 +6,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.langia.backend.dto.EmailVerificationResponseDTO;
 import com.langia.backend.dto.ErrorResponse;
+import com.langia.backend.dto.PendingVerificationResponseDTO;
 import com.langia.backend.dto.RateLimitExceededResponseDTO;
+import com.langia.backend.dto.ResendVerificationResponseDTO;
 import com.langia.backend.dto.ResetPasswordResponseDTO;
 
 import lombok.extern.slf4j.Slf4j;
@@ -130,6 +133,61 @@ public class GlobalExceptionHandler {
         log.warn("Password validation failed: {}", ex.getErrors());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ResetPasswordResponseDTO.passwordValidationError(ex.getErrors()));
+    }
+
+    // ========== Excecoes de Verificacao de E-mail ==========
+
+    /**
+     * Trata excecao de e-mail nao verificado (tentativa de login).
+     * Retorna 403 Forbidden com dados para redirecionar o usuario.
+     */
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<PendingVerificationResponseDTO> handleEmailNotVerified(
+            EmailNotVerifiedException ex) {
+        log.warn("Login attempt with unverified email for user: {}", ex.getUserId());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(PendingVerificationResponseDTO.builder()
+                    .userId(ex.getUserId())
+                    .maskedEmail(ex.getMaskedEmail())
+                    .emailVerificationRequired(true)
+                    .message("Por favor, verifique seu e-mail antes de fazer login.")
+                    .build());
+    }
+
+    /**
+     * Trata excecao de token de verificacao invalido.
+     */
+    @ExceptionHandler(InvalidVerificationTokenException.class)
+    public ResponseEntity<EmailVerificationResponseDTO> handleInvalidVerificationToken(
+            InvalidVerificationTokenException ex) {
+        log.warn("Invalid verification token: {}", ex.getErrorCode());
+
+        EmailVerificationResponseDTO response;
+        switch (ex.getErrorCode()) {
+            case "TOKEN_EXPIRED":
+                response = EmailVerificationResponseDTO.tokenExpired();
+                break;
+            case "TOKEN_USED":
+                response = EmailVerificationResponseDTO.tokenUsed();
+                break;
+            default:
+                response = EmailVerificationResponseDTO.tokenInvalid();
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    /**
+     * Trata excecao de rate limit de verificacao de e-mail.
+     */
+    @ExceptionHandler(EmailVerificationRateLimitException.class)
+    public ResponseEntity<ResendVerificationResponseDTO> handleEmailVerificationRateLimit(
+            EmailVerificationRateLimitException ex) {
+        log.warn("Email verification rate limit exceeded: {} seconds until reset",
+            ex.getRetryAfterSeconds());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterSeconds()))
+                .body(ResendVerificationResponseDTO.rateLimited(ex.getRetryAfterSeconds()));
     }
 
     // ========== Exceções de Validação ==========

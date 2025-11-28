@@ -177,7 +177,7 @@ export const SignupPage = () => {
     if (!validateForm()) return;
 
     try {
-      await register({
+      const response = await register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -185,7 +185,15 @@ export const SignupPage = () => {
         phone: formData.phone.replace(/\D/g, ''),
         profile: formData.profile,
       });
-      navigate('/dashboard');
+
+      // Redireciona para a página de verificação de e-mail
+      navigate('/verify-email', {
+        state: {
+          userId: response.userId,
+          maskedEmail: response.maskedEmail,
+          userName: response.name,
+        },
+      });
     } catch (error) {
       const errorMessage = (error as { message?: string })?.message || '';
       if (errorMessage.toLowerCase().includes('email')) {

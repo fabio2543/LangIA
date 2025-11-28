@@ -115,3 +115,40 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
 }
+
+// ============================================
+// Email Verification Types
+// ============================================
+
+export interface RegisterResponse {
+  userId: string;
+  name: string;
+  maskedEmail: string;
+  emailVerificationRequired: boolean;
+  message: string;
+}
+
+export interface ResendVerificationRequest {
+  userId: string;
+}
+
+export interface ResendVerificationResponse {
+  success: boolean;
+  maskedEmail?: string;
+  message: string;
+  remainingResends?: number;
+  retryAfterSeconds?: number;
+}
+
+export interface EmailVerificationResponse {
+  success: boolean;
+  error?: 'TOKEN_INVALID' | 'TOKEN_EXPIRED' | 'TOKEN_USED';
+  message?: string;
+}
+
+export interface PendingVerificationResponse {
+  userId: string;
+  maskedEmail: string;
+  emailVerificationRequired: boolean;
+  message: string;
+}

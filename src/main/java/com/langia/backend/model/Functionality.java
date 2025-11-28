@@ -1,6 +1,7 @@
 package com.langia.backend.model;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -38,16 +39,16 @@ import lombok.Setter;
 public class Functionality {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
-    private Long id;
+    private UUID id;
 
     @NotBlank
     @Column(name = "code", unique = true, nullable = false, length = 100)
     private String code;
 
     @NotBlank
-    @Column(name = "description", nullable = false, length = 255)
+    @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
 
     @NotNull
