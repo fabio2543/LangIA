@@ -65,6 +65,17 @@ export const authService = {
 };
 
 // ============================================
+// Password Reset Endpoints
+// ============================================
+
+export const passwordService = {
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await api.post('/auth/password/forgot', { email });
+    return response.data;
+  },
+};
+
+// ============================================
 // Error Handler
 // ============================================
 
