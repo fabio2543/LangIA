@@ -75,7 +75,7 @@ jobs:
         run: ./mvnw test jacoco:report
 
       - name: Verificar cobertura mínima
-        run: ./mvnw jacoco:check || echo "Cobertura abaixo do mínimo configurado"
+        run: ./mvnw verify -DskipTests || echo "Cobertura abaixo do mínimo configurado"
 
       - name: Upload relatório de cobertura
         uses: actions/upload-artifact@v4
