@@ -123,7 +123,7 @@ export const ResetPasswordPage = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await passwordService.resetPassword(token, password);
+      const response = await passwordService.resetPassword(token, password, passwordConfirmation);
       if (response.success) {
         setIsSuccess(true);
       } else {

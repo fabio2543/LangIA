@@ -92,8 +92,8 @@ export const passwordService = {
     return response.data;
   },
 
-  resetPassword: async (token: string, password: string): Promise<ResetPasswordResponse> => {
-    const response = await api.post('/auth/password/reset', { token, password });
+  resetPassword: async (token: string, password: string, passwordConfirmation: string): Promise<ResetPasswordResponse> => {
+    const response = await api.post('/auth/password/reset', { token, password, passwordConfirmation });
     return response.data;
   },
 };
