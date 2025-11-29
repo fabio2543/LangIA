@@ -1,13 +1,10 @@
 package com.langia.backend.model;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,8 +13,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,39 +23,50 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Additional profile details for users (students and teachers).
+ * Representa o enrollment de um estudante em um idioma.
+ * Um estudante pode ter no máximo 3 idiomas, sendo 1 primário.
  */
 @Entity
-@Table(name = "user_profile_details")
+@Table(
+    name = "student_language_enrollments",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uq_user_language",
+        columnNames = {"user_id", "language_code"}
+    )
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserProfileDetails {
+public class StudentLanguageEnrollment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "native_language", length = 50)
-    private String nativeLanguage;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "language_code", nullable = false)
+    private Language language;
 
-    @Column(name = "timezone", length = 50)
+    @Column(name = "cefr_level", length = 2)
+    private String cefrLevel;
+
+    @Column(name = "is_primary", nullable = false)
     @Builder.Default
-    private String timezone = "America/Sao_Paulo";
+    private boolean isPrimary = false;
 
-    @Column(name = "birth_date")
-    private LocalDate birthDate;
+    @Column(name = "enrolled_at", nullable = false)
+    @Builder.Default
+    private LocalDateTime enrolledAt = LocalDateTime.now();
 
-    @Column(name = "bio", columnDefinition = "TEXT")
-    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
-    private String bio;
+    @Column(name = "last_studied_at")
+    private LocalDateTime lastStudiedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

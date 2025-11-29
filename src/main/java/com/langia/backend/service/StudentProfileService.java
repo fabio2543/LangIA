@@ -20,19 +20,12 @@ import com.langia.backend.dto.SkillAssessmentResponseDTO;
 import com.langia.backend.dto.UpdatePersonalDataDTO;
 import com.langia.backend.dto.UserProfileDetailsDTO;
 import com.langia.backend.exception.UserNotFoundException;
-import com.langia.backend.model.CefrLevel;
-import com.langia.backend.model.DifficultyLevel;
-import com.langia.backend.model.LearningFormat;
-import com.langia.backend.model.LearningObjective;
 import com.langia.backend.model.NotificationCategory;
 import com.langia.backend.model.NotificationChannel;
 import com.langia.backend.model.NotificationSettingsEntity;
 import com.langia.backend.model.ReminderFrequency;
 import com.langia.backend.model.StudentLearningPreferences;
 import com.langia.backend.model.StudentSkillAssessment;
-import com.langia.backend.model.StudyDayOfWeek;
-import com.langia.backend.model.TimeAvailable;
-import com.langia.backend.model.TimeOfDay;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfileDetails;
 import com.langia.backend.repository.NotificationSettingsRepository;
@@ -46,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service for managing student profile data.
+ * Note: Language enrollments are now managed separately via StudentLanguageService.
  */
 @Service
 @RequiredArgsConstructor
@@ -120,38 +114,15 @@ public class StudentProfileService {
         StudentLearningPreferences prefs = preferencesRepository.findByUserId(userId)
                 .orElse(StudentLearningPreferences.builder().user(user).build());
 
-        // Map fields from DTO
-        prefs.setStudyLanguages(dto.getStudyLanguages() != null ? dto.getStudyLanguages() : new ArrayList<>());
-        prefs.setPrimaryLanguage(dto.getPrimaryLanguage());
-
-        // Convert CefrLevel map to String map for storage
-        if (dto.getSelfLevelByLanguage() != null) {
-            Map<String, String> levelMap = dto.getSelfLevelByLanguage().entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().name()));
-            prefs.setSelfLevelByLanguage(levelMap);
-        }
-
+        // Map fields from DTO (all are now strings/lists of strings)
         prefs.setDailyTimeAvailable(dto.getDailyTimeAvailable());
-
-        // Convert enum lists to string lists
-        if (dto.getPreferredDays() != null) {
-            prefs.setPreferredDays(dto.getPreferredDays().stream().map(Enum::name).toList());
-        }
-        if (dto.getPreferredTimes() != null) {
-            prefs.setPreferredTimes(dto.getPreferredTimes().stream().map(Enum::name).toList());
-        }
-
+        prefs.setPreferredDays(dto.getPreferredDays() != null ? dto.getPreferredDays() : new ArrayList<>());
+        prefs.setPreferredTimes(dto.getPreferredTimes() != null ? dto.getPreferredTimes() : new ArrayList<>());
         prefs.setWeeklyHoursGoal(dto.getWeeklyHoursGoal());
         prefs.setTopicsOfInterest(dto.getTopicsOfInterest() != null ? dto.getTopicsOfInterest() : new ArrayList<>());
         prefs.setCustomTopics(dto.getCustomTopics() != null ? dto.getCustomTopics() : new ArrayList<>());
-
-        if (dto.getPreferredFormats() != null) {
-            prefs.setPreferredFormats(dto.getPreferredFormats().stream().map(Enum::name).toList());
-        }
-        if (dto.getFormatRanking() != null) {
-            prefs.setFormatRanking(dto.getFormatRanking().stream().map(Enum::name).toList());
-        }
-
+        prefs.setPreferredFormats(dto.getPreferredFormats() != null ? dto.getPreferredFormats() : new ArrayList<>());
+        prefs.setFormatRanking(dto.getFormatRanking() != null ? dto.getFormatRanking() : new ArrayList<>());
         prefs.setPrimaryObjective(dto.getPrimaryObjective());
         prefs.setObjectiveDescription(dto.getObjectiveDescription());
         prefs.setObjectiveDeadline(dto.getObjectiveDeadline());
@@ -276,77 +247,24 @@ public class StudentProfileService {
     private LearningPreferencesDTO mapToLearningPreferencesDTO(StudentLearningPreferences prefs) {
         if (prefs == null) {
             return LearningPreferencesDTO.builder()
-                    .studyLanguages(new ArrayList<>())
                     .preferredDays(new ArrayList<>())
+                    .preferredTimes(new ArrayList<>())
                     .topicsOfInterest(new ArrayList<>())
+                    .customTopics(new ArrayList<>())
                     .preferredFormats(new ArrayList<>())
+                    .formatRanking(new ArrayList<>())
                     .build();
         }
 
-        // Convert stored string maps/lists back to enum types
-        Map<String, CefrLevel> levelMap = new HashMap<>();
-        if (prefs.getSelfLevelByLanguage() != null) {
-            prefs.getSelfLevelByLanguage().forEach((k, v) -> {
-                try {
-                    levelMap.put(k, CefrLevel.valueOf(v));
-                } catch (Exception e) {
-                    // Skip invalid values
-                }
-            });
-        }
-
-        List<StudyDayOfWeek> days = prefs.getPreferredDays() != null
-                ? prefs.getPreferredDays().stream()
-                        .map(s -> {
-                            try { return StudyDayOfWeek.valueOf(s); }
-                            catch (Exception e) { return null; }
-                        })
-                        .filter(d -> d != null)
-                        .toList()
-                : new ArrayList<>();
-
-        List<TimeOfDay> times = prefs.getPreferredTimes() != null
-                ? prefs.getPreferredTimes().stream()
-                        .map(s -> {
-                            try { return TimeOfDay.valueOf(s); }
-                            catch (Exception e) { return null; }
-                        })
-                        .filter(t -> t != null)
-                        .toList()
-                : new ArrayList<>();
-
-        List<LearningFormat> formats = prefs.getPreferredFormats() != null
-                ? prefs.getPreferredFormats().stream()
-                        .map(s -> {
-                            try { return LearningFormat.valueOf(s); }
-                            catch (Exception e) { return null; }
-                        })
-                        .filter(f -> f != null)
-                        .toList()
-                : new ArrayList<>();
-
-        List<LearningFormat> ranking = prefs.getFormatRanking() != null
-                ? prefs.getFormatRanking().stream()
-                        .map(s -> {
-                            try { return LearningFormat.valueOf(s); }
-                            catch (Exception e) { return null; }
-                        })
-                        .filter(f -> f != null)
-                        .toList()
-                : new ArrayList<>();
-
         return LearningPreferencesDTO.builder()
-                .studyLanguages(prefs.getStudyLanguages() != null ? prefs.getStudyLanguages() : new ArrayList<>())
-                .primaryLanguage(prefs.getPrimaryLanguage())
-                .selfLevelByLanguage(levelMap)
                 .dailyTimeAvailable(prefs.getDailyTimeAvailable())
-                .preferredDays(days)
-                .preferredTimes(times)
+                .preferredDays(prefs.getPreferredDays() != null ? prefs.getPreferredDays() : new ArrayList<>())
+                .preferredTimes(prefs.getPreferredTimes() != null ? prefs.getPreferredTimes() : new ArrayList<>())
                 .weeklyHoursGoal(prefs.getWeeklyHoursGoal())
                 .topicsOfInterest(prefs.getTopicsOfInterest() != null ? prefs.getTopicsOfInterest() : new ArrayList<>())
                 .customTopics(prefs.getCustomTopics() != null ? prefs.getCustomTopics() : new ArrayList<>())
-                .preferredFormats(formats)
-                .formatRanking(ranking)
+                .preferredFormats(prefs.getPreferredFormats() != null ? prefs.getPreferredFormats() : new ArrayList<>())
+                .formatRanking(prefs.getFormatRanking() != null ? prefs.getFormatRanking() : new ArrayList<>())
                 .primaryObjective(prefs.getPrimaryObjective())
                 .objectiveDescription(prefs.getObjectiveDescription())
                 .objectiveDeadline(prefs.getObjectiveDeadline())

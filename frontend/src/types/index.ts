@@ -205,6 +205,41 @@ export type NotificationCategory =
   | 'MARKETING';
 
 // ============================================
+// Student Profile - Language Types
+// ============================================
+
+export interface Language {
+  code: string;
+  namePt: string;
+  nameEn: string;
+  nameEs: string;
+  active: boolean;
+}
+
+export interface LanguageEnrollment {
+  id: string;
+  languageCode: string;
+  languageNamePt: string;
+  languageNameEn: string;
+  languageNameEs: string;
+  cefrLevel: CefrLevel | null;
+  isPrimary: boolean;
+  enrolledAt: string;
+  lastStudiedAt: string | null;
+}
+
+export interface EnrollLanguageRequest {
+  languageCode: string;
+  cefrLevel?: CefrLevel;
+  isPrimary?: boolean;
+}
+
+export interface UpdateLanguageEnrollmentRequest {
+  cefrLevel?: CefrLevel;
+  isPrimary?: boolean;
+}
+
+// ============================================
 // Student Profile - Interfaces
 // ============================================
 
@@ -238,12 +273,9 @@ export interface VerifyEmailChangeRequest {
   code: string;
 }
 
-// Learning Preferences
+// Learning Preferences (idiomas agora são gerenciados separadamente via LanguageEnrollment)
 export interface LearningPreferences {
-  studyLanguages: string[];
-  primaryLanguage: string;
-  selfLevelByLanguage: Record<string, CefrLevel>;
-  dailyTimeAvailable: TimeAvailable;
+  dailyTimeAvailable: TimeAvailable | null;
   preferredDays: StudyDayOfWeek[];
   preferredTimes?: TimeOfDay[];
   weeklyHoursGoal?: number;

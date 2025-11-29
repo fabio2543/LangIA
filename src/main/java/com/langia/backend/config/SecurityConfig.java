@@ -55,6 +55,7 @@ public class SecurityConfig {
                     "/api/auth/password/**",    // Recuperacao de senha
                     "/api/auth/email/**",       // Verificacao de e-mail
                     "/api/users/register",      // Cadastro de usuarios
+                    "/api/profile/languages/available", // Lista de idiomas disponíveis
                     "/h2-console/**",           // Console H2 (apenas dev)
                     "/actuator/**",             // Endpoints de monitoramento
                     "/error"                    // Pagina de erro

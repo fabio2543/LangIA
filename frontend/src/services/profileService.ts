@@ -6,6 +6,10 @@ import type {
   SkillAssessment,
   SkillAssessmentResponse,
   NotificationSettings,
+  Language,
+  LanguageEnrollment,
+  EnrollLanguageRequest,
+  UpdateLanguageEnrollmentRequest,
 } from '../types';
 
 // ============================================
@@ -98,6 +102,50 @@ export const notificationSettingsService = {
   // Update notification settings
   updateNotificationSettings: async (data: NotificationSettings): Promise<NotificationSettings> => {
     const response = await api.put<NotificationSettings>('/profile/notification-settings', data);
+    return response.data;
+  },
+};
+
+// ============================================
+// Language Enrollment Endpoints
+// ============================================
+
+export const languageService = {
+  // Get all available languages
+  getAvailableLanguages: async (): Promise<Language[]> => {
+    const response = await api.get<Language[]>('/profile/languages/available');
+    return response.data;
+  },
+
+  // Get user's language enrollments
+  getEnrollments: async (): Promise<LanguageEnrollment[]> => {
+    const response = await api.get<LanguageEnrollment[]>('/profile/languages');
+    return response.data;
+  },
+
+  // Enroll in a new language
+  enroll: async (data: EnrollLanguageRequest): Promise<LanguageEnrollment> => {
+    const response = await api.post<LanguageEnrollment>('/profile/languages', data);
+    return response.data;
+  },
+
+  // Update language enrollment (level or primary status)
+  updateEnrollment: async (
+    languageCode: string,
+    data: UpdateLanguageEnrollmentRequest
+  ): Promise<LanguageEnrollment> => {
+    const response = await api.put<LanguageEnrollment>(`/profile/languages/${languageCode}`, data);
+    return response.data;
+  },
+
+  // Remove language enrollment
+  unenroll: async (languageCode: string): Promise<void> => {
+    await api.delete(`/profile/languages/${languageCode}`);
+  },
+
+  // Set language as primary
+  setPrimary: async (languageCode: string): Promise<LanguageEnrollment> => {
+    const response = await api.put<LanguageEnrollment>(`/profile/languages/${languageCode}/primary`);
     return response.data;
   },
 };

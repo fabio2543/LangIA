@@ -41,7 +41,7 @@ public class EmailChangeRequest {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "novo_email", nullable = false, length = 255)
+    @Column(name = "new_email", nullable = false, length = 255)
     private String newEmail;
 
     @Column(name = "token_hash", nullable = false, length = 255)

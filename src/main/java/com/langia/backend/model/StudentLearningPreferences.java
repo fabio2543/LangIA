@@ -2,9 +2,7 @@ package com.langia.backend.model;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -50,69 +48,54 @@ public class StudentLearningPreferences {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    // Languages (stored as JSONB for simplicity)
-    @Column(name = "idiomas_estudo", columnDefinition = "jsonb")
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Builder.Default
-    private List<String> studyLanguages = new ArrayList<>();
-
-    @Column(name = "idioma_principal", length = 50)
-    private String primaryLanguage;
-
-    @Column(name = "nivel_auto_por_idioma", columnDefinition = "jsonb")
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Builder.Default
-    private Map<String, String> selfLevelByLanguage = new HashMap<>();
-
     // Availability
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tempo_diario_disponivel")
+    @Column(name = "daily_time_available", length = 20)
     @Builder.Default
-    private TimeAvailable dailyTimeAvailable = TimeAvailable.MIN_30;
+    private String dailyTimeAvailable = "MIN_30";
 
-    @Column(name = "dias_semana_preferidos", columnDefinition = "jsonb")
+    @Column(name = "preferred_days", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private List<String> preferredDays = new ArrayList<>();
 
-    @Column(name = "horarios_preferidos", columnDefinition = "jsonb")
+    @Column(name = "preferred_times", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private List<String> preferredTimes = new ArrayList<>();
 
-    @Column(name = "meta_horas_semana")
+    @Column(name = "weekly_hours_goal")
     private Integer weeklyHoursGoal;
 
     // Interests and formats
-    @Column(name = "topicos_interesse", columnDefinition = "jsonb")
+    @Column(name = "topics_of_interest", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private List<String> topicsOfInterest = new ArrayList<>();
 
-    @Column(name = "topicos_customizados", columnDefinition = "jsonb")
+    @Column(name = "custom_topics", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private List<String> customTopics = new ArrayList<>();
 
-    @Column(name = "formatos_preferidos", columnDefinition = "jsonb")
+    @Column(name = "preferred_formats", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private List<String> preferredFormats = new ArrayList<>();
 
-    @Column(name = "ranking_formatos", columnDefinition = "jsonb")
+    @Column(name = "format_ranking", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private List<String> formatRanking = new ArrayList<>();
 
     // Objectives
     @Enumerated(EnumType.STRING)
-    @Column(name = "objetivo_principal")
+    @Column(name = "primary_objective")
     private LearningObjective primaryObjective;
 
-    @Column(name = "objetivo_descricao", length = 500)
+    @Column(name = "objective_description", length = 500)
     private String objectiveDescription;
 
-    @Column(name = "prazo_objetivo", length = 30)
+    @Column(name = "objective_deadline", length = 30)
     private String objectiveDeadline;
 
     @CreationTimestamp

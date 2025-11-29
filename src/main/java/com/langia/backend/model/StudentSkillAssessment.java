@@ -47,51 +47,51 @@ public class StudentSkillAssessment {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "idioma", nullable = false, length = 50)
+    @Column(name = "language", nullable = false, length = 50)
     private String language;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "dificuldade_escuta", nullable = false)
+    @Column(name = "listening_difficulty", nullable = false)
     @Builder.Default
     private DifficultyLevel listeningDifficulty = DifficultyLevel.MODERATE;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "dificuldade_fala", nullable = false)
+    @Column(name = "speaking_difficulty", nullable = false)
     @Builder.Default
     private DifficultyLevel speakingDifficulty = DifficultyLevel.MODERATE;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "dificuldade_leitura", nullable = false)
+    @Column(name = "reading_difficulty", nullable = false)
     @Builder.Default
     private DifficultyLevel readingDifficulty = DifficultyLevel.MODERATE;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "dificuldade_escrita", nullable = false)
+    @Column(name = "writing_difficulty", nullable = false)
     @Builder.Default
     private DifficultyLevel writingDifficulty = DifficultyLevel.MODERATE;
 
-    @Column(name = "detalhes_escuta", columnDefinition = "jsonb")
+    @Column(name = "listening_details", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private List<String> listeningDetails = new ArrayList<>();
 
-    @Column(name = "detalhes_fala", columnDefinition = "jsonb")
+    @Column(name = "speaking_details", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private List<String> speakingDetails = new ArrayList<>();
 
-    @Column(name = "detalhes_leitura", columnDefinition = "jsonb")
+    @Column(name = "reading_details", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private List<String> readingDetails = new ArrayList<>();
 
-    @Column(name = "detalhes_escrita", columnDefinition = "jsonb")
+    @Column(name = "writing_details", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private List<String> writingDetails = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "nivel_cefr_auto")
+    @Column(name = "self_cefr_level")
     private CefrLevel selfCefrLevel;
 
     @CreationTimestamp

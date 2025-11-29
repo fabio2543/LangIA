@@ -49,31 +49,31 @@ public class NotificationSettingsEntity {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @Column(name = "canais_ativos", columnDefinition = "jsonb", nullable = false)
+    @Column(name = "active_channels", columnDefinition = "jsonb", nullable = false)
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private Map<String, Boolean> activeChannels = getDefaultChannels();
 
-    @Column(name = "preferencias_por_categoria", columnDefinition = "jsonb")
+    @Column(name = "category_preferences", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
     private Map<String, Object> categoryPreferences = new HashMap<>();
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "frequencia_lembretes")
+    @Column(name = "reminder_frequency")
     @Builder.Default
     private ReminderFrequency reminderFrequency = ReminderFrequency.DAILY;
 
-    @Column(name = "horario_preferido_inicio")
+    @Column(name = "preferred_time_start")
     private LocalTime preferredTimeStart;
 
-    @Column(name = "horario_preferido_fim")
+    @Column(name = "preferred_time_end")
     private LocalTime preferredTimeEnd;
 
-    @Column(name = "modo_silencioso_inicio")
+    @Column(name = "quiet_mode_start")
     private LocalTime quietModeStart;
 
-    @Column(name = "modo_silencioso_fim")
+    @Column(name = "quiet_mode_end")
     private LocalTime quietModeEnd;
 
     @CreationTimestamp

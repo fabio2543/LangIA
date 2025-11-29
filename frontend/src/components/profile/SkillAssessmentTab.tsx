@@ -4,9 +4,9 @@ import { Select } from '../common/Select';
 import { CheckboxGroup } from '../common/CheckboxGroup';
 import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
-import { skillAssessmentService, learningPreferencesService } from '../../services/profileService';
+import { skillAssessmentService, languageService } from '../../services/profileService';
 import { handleApiError } from '../../services/api';
-import type { SkillAssessment, SkillAssessmentResponse, DifficultyLevel, CefrLevel } from '../../types';
+import type { SkillAssessment, SkillAssessmentResponse, DifficultyLevel, CefrLevel, LanguageEnrollment } from '../../types';
 
 const DIFFICULTY_LEVELS: DifficultyLevel[] = ['NONE', 'LOW', 'MODERATE', 'HIGH'];
 
@@ -19,7 +19,7 @@ export const SkillAssessmentTab = () => {
   const [showForm, setShowForm] = useState(false);
 
   const [assessments, setAssessments] = useState<SkillAssessmentResponse[]>([]);
-  const [studyLanguages, setStudyLanguages] = useState<string[]>([]);
+  const [enrollments, setEnrollments] = useState<LanguageEnrollment[]>([]);
 
   const [formData, setFormData] = useState<SkillAssessment>({
     language: '',
@@ -34,19 +34,17 @@ export const SkillAssessmentTab = () => {
     selfCefrLevel: undefined,
   });
 
-  // Carregar avaliações e idiomas
+  // Carregar avaliações e idiomas matriculados
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        const [assessmentsData, preferencesData] = await Promise.all([
+        const [assessmentsData, enrollmentsData] = await Promise.all([
           skillAssessmentService.getSkillAssessments(),
-          learningPreferencesService.getLearningPreferences().catch(() => null),
+          languageService.getEnrollments().catch(() => []),
         ]);
         setAssessments(assessmentsData);
-        if (preferencesData?.studyLanguages) {
-          setStudyLanguages(preferencesData.studyLanguages);
-        }
+        setEnrollments(enrollmentsData);
       } catch (err) {
         const apiError = handleApiError(err);
         setError(apiError.message);
@@ -124,9 +122,9 @@ export const SkillAssessmentTab = () => {
     label: label as string,
   }));
 
-  const languageOptions = studyLanguages.map((lang) => ({
-    value: lang,
-    label: t.enums.languages[lang as keyof typeof t.enums.languages] || lang,
+  const languageOptions = enrollments.map((enrollment) => ({
+    value: enrollment.languageCode,
+    label: enrollment.languageNamePt, // TODO: Use locale-based name
   }));
 
   const listeningDetailOptions = Object.entries(t.profile.skillAssessment.listeningDetails).map(

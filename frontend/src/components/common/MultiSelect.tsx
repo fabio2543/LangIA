@@ -62,9 +62,13 @@ export const MultiSelect = ({
     }
   };
 
-  const selectedLabels = value
-    .map((v) => options.find((o) => o.value === v)?.label)
-    .filter(Boolean);
+  // Mapear valores selecionados para objetos com value e label
+  const selectedItems = value
+    .map((v) => {
+      const option = options.find((o) => o.value === v);
+      return option ? { value: v, label: option.label } : null;
+    })
+    .filter((item): item is { value: string; label: string } => item !== null);
 
   return (
     <div className={cn('w-full relative', className)} ref={containerRef}>
@@ -84,16 +88,16 @@ export const MultiSelect = ({
         )}
       >
         <div className="flex flex-wrap gap-2 items-center">
-          {selectedLabels.length > 0 ? (
-            selectedLabels.map((label, index) => (
+          {selectedItems.length > 0 ? (
+            selectedItems.map((item) => (
               <span
-                key={value[index]}
+                key={item.value}
                 className="inline-flex items-center gap-1 px-3 py-1 bg-primary text-white rounded-full text-sm"
               >
-                {label}
+                {item.label}
                 <button
                   type="button"
-                  onClick={(e) => removeTag(value[index], e)}
+                  onClick={(e) => removeTag(item.value, e)}
                   className="hover:text-white/80"
                   disabled={disabled}
                 >
