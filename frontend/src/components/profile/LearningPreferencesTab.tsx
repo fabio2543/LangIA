@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '../../i18n';
 import { MultiSelect } from '../common/MultiSelect';
-import { Select } from '../common/Select';
+import { Dropdown } from '../common/Dropdown';
 import { CheckboxGroup } from '../common/CheckboxGroup';
 import { RadioGroup } from '../common/RadioGroup';
 import { Textarea } from '../common/Textarea';
@@ -184,10 +184,10 @@ export const LearningPreferencesTab = () => {
             />
 
             {formData.studyLanguages.length > 0 && (
-              <Select
+              <Dropdown
                 label={t.profile.learningPreferences.primaryLanguage}
                 value={formData.primaryLanguage}
-                onChange={(e) => updateField('primaryLanguage', e.target.value)}
+                onChange={(value) => updateField('primaryLanguage', value)}
                 options={formData.studyLanguages.map((lang) => ({
                   value: lang,
                   label: t.enums.languages[lang as keyof typeof t.enums.languages] || lang,
@@ -198,17 +198,17 @@ export const LearningPreferencesTab = () => {
 
             {/* Nível por idioma */}
             {formData.studyLanguages.map((lang) => (
-              <Select
+              <Dropdown
                 key={lang}
                 label={t.profile.learningPreferences.selfLevel.replace(
                   '{language}',
                   t.enums.languages[lang as keyof typeof t.enums.languages] || lang
                 )}
                 value={formData.selfLevelByLanguage[lang] || ''}
-                onChange={(e) =>
+                onChange={(value) =>
                   updateField('selfLevelByLanguage', {
                     ...formData.selfLevelByLanguage,
-                    [lang]: e.target.value as CefrLevel,
+                    [lang]: value as CefrLevel,
                   })
                 }
                 options={cefrOptions}
@@ -224,10 +224,10 @@ export const LearningPreferencesTab = () => {
             {t.profile.learningPreferences.availabilitySection}
           </h3>
           <div className="space-y-4">
-            <Select
+            <Dropdown
               label={t.profile.learningPreferences.dailyTime}
               value={formData.dailyTimeAvailable}
-              onChange={(e) => updateField('dailyTimeAvailable', e.target.value as TimeAvailable)}
+              onChange={(value) => updateField('dailyTimeAvailable', value as TimeAvailable)}
               options={timeAvailableOptions}
               placeholder={t.profile.learningPreferences.selectDailyTime}
             />
@@ -319,10 +319,10 @@ export const LearningPreferencesTab = () => {
               showCount
             />
 
-            <Select
+            <Dropdown
               label={t.profile.learningPreferences.objectiveDeadline}
               value={formData.objectiveDeadline || ''}
-              onChange={(e) => updateField('objectiveDeadline', e.target.value)}
+              onChange={(value) => updateField('objectiveDeadline', value)}
               options={deadlineOptions}
               placeholder={t.profile.learningPreferences.selectDeadline}
             />

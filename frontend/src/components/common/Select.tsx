@@ -68,7 +68,7 @@ export const Select = ({
           {...props}
         >
           {placeholder && (
-            <option value="" disabled>
+            <option value="" disabled className="text-text-light bg-white">
               {placeholder}
             </option>
           )}
@@ -77,6 +77,7 @@ export const Select = ({
               key={option.value}
               value={option.value}
               disabled={option.disabled}
+              className="bg-white text-text py-2"
             >
               {option.label}
             </option>

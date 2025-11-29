@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '../../i18n';
 import { Toggle } from '../common/Toggle';
-import { Select } from '../common/Select';
+import { Dropdown } from '../common/Dropdown';
 import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
 import { notificationSettingsService } from '../../services/profileService';
@@ -290,10 +290,10 @@ export const NotificationSettingsTab = () => {
           <h3 className="text-lg font-medium text-text mb-4 pb-2 border-b">
             {t.profile.notificationSettings.remindersSection}
           </h3>
-          <Select
+          <Dropdown
             label={t.profile.notificationSettings.reminderFrequency}
             value={settings.reminderFrequency}
-            onChange={(e) => updateField('reminderFrequency', e.target.value as ReminderFrequency)}
+            onChange={(value) => updateField('reminderFrequency', value as ReminderFrequency)}
             options={frequencyOptions}
             placeholder={t.profile.notificationSettings.selectFrequency}
           />

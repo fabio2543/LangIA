@@ -247,6 +247,7 @@ export const en = {
     profile: 'Profile',
     logout: 'Logout',
     loggingOut: 'Logging out...',
+    myProfile: 'My Profile',
     student: 'Student',
     teacher: 'Teacher',
     comingSoon: 'Coming soon',

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '../../i18n';
 import { Input } from '../common/Input';
-import { Select } from '../common/Select';
+import { Dropdown } from '../common/Dropdown';
 import { Textarea } from '../common/Textarea';
 import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
@@ -169,19 +169,19 @@ export const PersonalDataTab = () => {
         />
 
         {/* Idioma nativo */}
-        <Select
+        <Dropdown
           label={t.profile.personalData.nativeLanguage}
           value={formData.nativeLanguage}
-          onChange={(e) => handleInputChange('nativeLanguage', e.target.value)}
+          onChange={(value) => handleInputChange('nativeLanguage', value)}
           options={languageOptions}
           placeholder={t.profile.personalData.selectNativeLanguage}
         />
 
         {/* Fuso horário */}
-        <Select
+        <Dropdown
           label={t.profile.personalData.timezone}
           value={formData.timezone}
-          onChange={(e) => handleInputChange('timezone', e.target.value)}
+          onChange={(value) => handleInputChange('timezone', value)}
           options={TIMEZONES}
           placeholder={t.profile.personalData.selectTimezone}
         />

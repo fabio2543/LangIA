@@ -247,6 +247,7 @@ export const pt = {
     profile: 'Perfil',
     logout: 'Sair',
     loggingOut: 'Saindo...',
+    myProfile: 'Meu Perfil',
     student: 'Estudante',
     teacher: 'Professor',
     comingSoon: 'Em breve',
