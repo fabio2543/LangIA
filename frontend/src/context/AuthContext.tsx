@@ -25,19 +25,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
 
-  // Inicializa o estado de auth a partir do localStorage (dados do usuário para UI)
+  // Inicializa o estado de auth validando com o backend
   // O token JWT é gerenciado via cookie HttpOnly pelo backend
   useEffect(() => {
-    const initAuth = () => {
+    const initAuth = async () => {
       const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
 
       if (storedUser) {
         try {
-          const parsedUser = JSON.parse(storedUser) as AuthUser;
-          setUser(parsedUser);
+          // Valida a sessão com o backend antes de confiar no localStorage
+          const validation = await authService.validateSession();
+
+          if (validation.valid && validation.session) {
+            // Sessão válida - atualiza com dados frescos do backend
+            const authUser: AuthUser = {
+              id: validation.session.userId,
+              name: validation.session.name,
+              email: validation.session.email,
+              profile: validation.session.profile,
+              permissions: validation.session.permissions,
+            };
+            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
+            setUser(authUser);
+          } else {
+            // Sessão inválida - limpa dados locais
+            localStorage.removeItem(STORAGE_KEYS.USER);
+            setUser(null);
+          }
         } catch {
-          // Dados corrompidos, limpa o storage
+          // Erro na validação (ex: backend indisponível) - limpa dados locais
           localStorage.removeItem(STORAGE_KEYS.USER);
+          setUser(null);
         }
       }
       setIsLoading(false);
