@@ -56,7 +56,7 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", user.getId().toString());
         claims.put("email", user.getEmail());
-        claims.put("profile", user.getProfile().name());
+        claims.put("profile", user.getProfileCode().name());
         claims.put("name", user.getName());
 
         log.info("Gerando token JWT para usuário: {}", user.getEmail());

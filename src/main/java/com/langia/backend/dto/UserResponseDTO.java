@@ -41,7 +41,7 @@ public class UserResponseDTO {
                 .email(user.getEmail())
                 .cpf(user.getCpfString())
                 .phone(user.getPhone())
-                .profile(user.getProfile())
+                .profile(user.getProfileCode())
                 .build();
     }
 }

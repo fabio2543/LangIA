@@ -8,11 +8,12 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Email;
@@ -60,9 +61,16 @@ public class User {
     private String password;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "profile", nullable = false)
-    private UserProfile profile;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id", nullable = false)
+    private Profile profile;
+
+    /**
+     * Convenience method to get the profile code (enum).
+     */
+    public UserProfile getProfileCode() {
+        return profile != null ? profile.getCode() : null;
+    }
 
     @NotBlank
     @Column(name = "phone", unique = true, nullable = false)

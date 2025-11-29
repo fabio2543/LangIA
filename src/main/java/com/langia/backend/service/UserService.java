@@ -7,8 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.langia.backend.exception.CpfAlreadyExistsException;
 import com.langia.backend.exception.EmailAlreadyExistsException;
 import com.langia.backend.exception.PhoneAlreadyExistsException;
+import com.langia.backend.model.Profile;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
+import com.langia.backend.repository.ProfileRepository;
 import com.langia.backend.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ProfileRepository profileRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final EmailVerificationService emailVerificationService;
 
@@ -63,6 +66,10 @@ public class UserService {
         // Criptografa a senha usando BCrypt
         String encryptedPassword = passwordEncoder.encode(password);
 
+        // Busca a entidade Profile pelo código
+        Profile profileEntity = profileRepository.findByCode(profile)
+                .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + profile));
+
         // Cria a entidade do usuário
         User user = User.builder()
                 .name(name)
@@ -70,7 +77,7 @@ public class UserService {
                 .password(encryptedPassword)
                 .cpfString(cpfString)
                 .phone(phone)
-                .profile(profile)
+                .profile(profileEntity)
                 .build();
 
         // Salva no banco de dados
