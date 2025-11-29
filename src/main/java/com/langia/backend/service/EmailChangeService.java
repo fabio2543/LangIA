@@ -84,11 +84,18 @@ public class EmailChangeService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        // Find all pending requests for this user and check the code
+        // Find valid request using optimized query (only active, unexpired requests)
         EmailChangeRequest request = findValidRequest(userId, code);
 
         if (request == null) {
             throw new InvalidEmailChangeCodeException("Invalid or expired code");
+        }
+
+        // Revalidate that target email is still available (race condition protection)
+        if (userRepository.existsByEmail(request.getNewEmail())) {
+            request.markAsUsed(); // Invalidate this request
+            requestRepository.save(request);
+            throw new EmailAlreadyExistsException("Email is no longer available");
         }
 
         // Update email
@@ -108,12 +115,11 @@ public class EmailChangeService {
 
     /**
      * Find a valid (not expired, not used) request matching the code.
+     * Uses optimized query to fetch only active requests for the user.
      */
     private EmailChangeRequest findValidRequest(UUID userId, String code) {
-        // Get all requests for user
-        return requestRepository.findAll().stream()
-                .filter(r -> r.getUser().getId().equals(userId))
-                .filter(EmailChangeRequest::isValid)
+        // Get only active requests for user (optimized query)
+        return requestRepository.findActiveRequestsByUserId(userId, LocalDateTime.now()).stream()
                 .filter(r -> passwordEncoder.matches(code, r.getTokenHash()))
                 .findFirst()
                 .orElse(null);

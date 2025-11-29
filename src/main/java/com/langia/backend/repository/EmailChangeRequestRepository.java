@@ -1,6 +1,7 @@
 package com.langia.backend.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +20,13 @@ import com.langia.backend.model.EmailChangeRequest;
 public interface EmailChangeRequestRepository extends JpaRepository<EmailChangeRequest, UUID> {
 
     Optional<EmailChangeRequest> findByTokenHash(String tokenHash);
+
+    /**
+     * Find all active (not used, not expired) email change requests for a user.
+     * This is an optimized query that only fetches relevant records.
+     */
+    @Query("SELECT e FROM EmailChangeRequest e WHERE e.user.id = :userId AND e.usedAt IS NULL AND e.expiresAt > :now")
+    List<EmailChangeRequest> findActiveRequestsByUserId(@Param("userId") UUID userId, @Param("now") LocalDateTime now);
 
     @Query("SELECT COUNT(e) FROM EmailChangeRequest e WHERE e.user.id = :userId AND e.usedAt IS NULL AND e.expiresAt > :now")
     long countActiveRequestsByUserId(@Param("userId") UUID userId, @Param("now") LocalDateTime now);
