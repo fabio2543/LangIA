@@ -9,6 +9,11 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { EmailConfirmationPage } from './pages/EmailConfirmationPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { PersonalDataTab } from './components/profile/PersonalDataTab';
+import { LearningPreferencesTab } from './components/profile/LearningPreferencesTab';
+import { SkillAssessmentTab } from './components/profile/SkillAssessmentTab';
+import { NotificationSettingsTab } from './components/profile/NotificationSettingsTab';
 
 function App() {
   return (
@@ -24,6 +29,12 @@ function App() {
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/email-confirmed" element={<EmailConfirmationPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/profile" element={<ProfilePage />}>
+              <Route index element={<PersonalDataTab />} />
+              <Route path="learning" element={<LearningPreferencesTab />} />
+              <Route path="assessment" element={<SkillAssessmentTab />} />
+              <Route path="notifications" element={<NotificationSettingsTab />} />
+            </Route>
           </Routes>
         </AuthProvider>
       </I18nProvider>
