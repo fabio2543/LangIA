@@ -53,7 +53,7 @@ export const LearningPreferencesTab = () => {
         if (data) {
           setFormData(data);
         }
-      } catch (err) {
+      } catch {
         // Se não houver dados, usa defaults
         console.log('No preferences found, using defaults');
       } finally {

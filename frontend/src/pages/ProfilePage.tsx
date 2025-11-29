@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
@@ -10,20 +10,14 @@ export const ProfilePage = () => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('personal');
 
-  // Determina a tab ativa baseado na URL
-  useEffect(() => {
+  // Determina a tab ativa baseado na URL (derivado, sem estado)
+  const activeTab = useMemo(() => {
     const path = location.pathname;
-    if (path.includes('/learning')) {
-      setActiveTab('learning');
-    } else if (path.includes('/assessment')) {
-      setActiveTab('assessment');
-    } else if (path.includes('/notifications')) {
-      setActiveTab('notifications');
-    } else {
-      setActiveTab('personal');
-    }
+    if (path.includes('/learning')) return 'learning';
+    if (path.includes('/assessment')) return 'assessment';
+    if (path.includes('/notifications')) return 'notifications';
+    return 'personal';
   }, [location.pathname]);
 
   // Redireciona para login se não estiver autenticado
@@ -34,7 +28,6 @@ export const ProfilePage = () => {
   }, [user, isLoading, navigate]);
 
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
     const routes: Record<string, string> = {
       personal: '/profile',
       learning: '/profile/learning',

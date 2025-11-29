@@ -58,7 +58,7 @@ export const NotificationSettingsTab = () => {
         if (data) {
           setSettings(data);
         }
-      } catch (err) {
+      } catch {
         // Se não houver dados, usa defaults
         console.log('No notification settings found, using defaults');
       } finally {
