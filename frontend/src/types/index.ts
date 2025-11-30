@@ -152,3 +152,173 @@ export interface PendingVerificationResponse {
   emailVerificationRequired: boolean;
   message: string;
 }
+
+// ============================================
+// Student Profile - Union Types (Enums)
+// ============================================
+
+export type CefrLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+
+export type DifficultyLevel = 'NONE' | 'LOW' | 'MODERATE' | 'HIGH';
+
+export type TimeAvailable = 'MIN_15' | 'MIN_30' | 'MIN_45' | 'H_1' | 'H_1_30' | 'H_2_PLUS';
+
+export type ReminderFrequency = 'DAILY' | 'ALTERNATE_DAYS' | 'WEEKLY' | 'CUSTOM';
+
+export type LearningObjective =
+  | 'CAREER'
+  | 'UNIVERSITY'
+  | 'EXAMS'
+  | 'TRAVEL'
+  | 'HOBBY'
+  | 'IMMIGRATION'
+  | 'OTHER';
+
+export type LearningFormat =
+  | 'VIDEO_LESSONS'
+  | 'WRITTEN_EXERCISES'
+  | 'CONVERSATION'
+  | 'GAMES'
+  | 'READING'
+  | 'AUDIO_PODCAST'
+  | 'FLASHCARDS';
+
+export type StudyDayOfWeek =
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY';
+
+export type TimeOfDay = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'NIGHT';
+
+export type NotificationChannel = 'PUSH' | 'EMAIL' | 'WHATSAPP';
+
+export type NotificationCategory =
+  | 'SECURITY'
+  | 'STUDY_REMINDERS'
+  | 'PROGRESS'
+  | 'CONTENT'
+  | 'CLASS'
+  | 'MARKETING';
+
+// ============================================
+// Student Profile - Language Types
+// ============================================
+
+export interface Language {
+  code: string;
+  namePt: string;
+  nameEn: string;
+  nameEs: string;
+  active: boolean;
+}
+
+export interface LanguageEnrollment {
+  id: string;
+  languageCode: string;
+  languageNamePt: string;
+  languageNameEn: string;
+  languageNameEs: string;
+  cefrLevel: CefrLevel | null;
+  isPrimary: boolean;
+  enrolledAt: string;
+  lastStudiedAt: string | null;
+}
+
+export interface EnrollLanguageRequest {
+  languageCode: string;
+  cefrLevel?: CefrLevel;
+  isPrimary?: boolean;
+}
+
+export interface UpdateLanguageEnrollmentRequest {
+  cefrLevel?: CefrLevel;
+  isPrimary?: boolean;
+}
+
+// ============================================
+// Student Profile - Interfaces
+// ============================================
+
+// Personal Data
+export interface UserProfileDetails {
+  id: string;
+  fullName: string;
+  email: string;
+  whatsappPhone: string;
+  nativeLanguage: string;
+  timezone: string;
+  birthDate?: string;
+  bio?: string;
+}
+
+export interface UpdatePersonalDataRequest {
+  fullName?: string;
+  whatsappPhone?: string;
+  nativeLanguage?: string;
+  timezone?: string;
+  birthDate?: string;
+  bio?: string;
+}
+
+// Email Change
+export interface RequestEmailChangeRequest {
+  newEmail: string;
+}
+
+export interface VerifyEmailChangeRequest {
+  code: string;
+}
+
+// Learning Preferences (idiomas agora são gerenciados separadamente via LanguageEnrollment)
+export interface LearningPreferences {
+  dailyTimeAvailable: TimeAvailable | null;
+  preferredDays: StudyDayOfWeek[];
+  preferredTimes?: TimeOfDay[];
+  weeklyHoursGoal?: number;
+  topicsOfInterest: string[];
+  customTopics?: string[];
+  preferredFormats: LearningFormat[];
+  formatRanking?: LearningFormat[];
+  primaryObjective?: LearningObjective;
+  objectiveDescription?: string;
+  objectiveDeadline?: string;
+}
+
+// Skill Assessment
+export interface SkillAssessment {
+  language: string;
+  listeningDifficulty: DifficultyLevel;
+  speakingDifficulty: DifficultyLevel;
+  readingDifficulty: DifficultyLevel;
+  writingDifficulty: DifficultyLevel;
+  listeningDetails?: string[];
+  speakingDetails?: string[];
+  readingDetails?: string[];
+  writingDetails?: string[];
+  selfCefrLevel?: CefrLevel;
+}
+
+export interface SkillAssessmentResponse extends SkillAssessment {
+  id: string;
+  assessedAt: string;
+}
+
+// Notification Settings
+export interface CategoryPreference {
+  active: boolean;
+  channels: NotificationChannel[];
+}
+
+export interface NotificationSettings {
+  activeChannels: Record<NotificationChannel, boolean>;
+  categoryPreferences: Record<NotificationCategory, CategoryPreference>;
+  reminderFrequency: ReminderFrequency;
+  preferredTimeStart?: string;
+  preferredTimeEnd?: string;
+  quietModeStart?: string;
+  quietModeEnd?: string;
+}

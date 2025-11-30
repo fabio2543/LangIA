@@ -190,6 +190,30 @@ public class GlobalExceptionHandler {
                 .body(ResendVerificationResponseDTO.rateLimited(ex.getRetryAfterSeconds()));
     }
 
+    // ========== Exceções de Negócio ==========
+
+    /**
+     * Trata exceções de recurso não encontrado.
+     * Retorna 404 Not Found.
+     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+        log.warn("Resource not found: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    /**
+     * Trata exceções de regras de negócio.
+     * Retorna 400 Bad Request.
+     */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
+        log.warn("Business rule violation: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
     // ========== Exceções de Validação ==========
 
     /**

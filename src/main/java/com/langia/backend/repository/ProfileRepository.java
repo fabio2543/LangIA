@@ -13,7 +13,7 @@ import com.langia.backend.model.UserProfile;
  * Repository para gerenciar perfis de usuário.
  */
 @Repository
-public interface ProfileRepository extends JpaRepository<Profile, Long> {
+public interface ProfileRepository extends JpaRepository<Profile, java.util.UUID> {
 
     /**
      * Busca perfil por código.

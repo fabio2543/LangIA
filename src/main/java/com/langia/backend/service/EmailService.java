@@ -123,6 +123,52 @@ public class EmailService {
     }
 
     /**
+     * Envia email de verificacao de alteracao de e-mail.
+     *
+     * @param toEmail  Novo email do destinatario
+     * @param userName Nome do usuario
+     * @param code     Codigo de verificacao de 6 digitos
+     */
+    public void sendEmailChangeVerification(String toEmail, String userName, String code) {
+        log.info("Preparing email change verification for: {}", maskEmail(toEmail));
+
+        Context context = new Context();
+        context.setVariable("userName", userName);
+        context.setVariable("code", code);
+        context.setVariable("expirationTime", "15 minutos");
+        context.setVariable("platformName", platformName);
+        context.setVariable("supportEmail", supportEmail);
+
+        String html = templateEngine.process("email/email-change-verification", context);
+        String subject = "Codigo de Verificacao - Alteracao de E-mail - " + platformName;
+
+        sendHtmlEmail(toEmail, subject, html);
+    }
+
+    /**
+     * Envia notificacao de que o e-mail foi alterado (para o e-mail antigo).
+     *
+     * @param oldEmail Antigo email do usuario
+     * @param userName Nome do usuario
+     * @param newEmail Novo email do usuario
+     */
+    public void sendEmailChangedNotification(String oldEmail, String userName, String newEmail) {
+        log.info("Preparing email changed notification for: {}", maskEmail(oldEmail));
+
+        Context context = new Context();
+        context.setVariable("userName", userName);
+        context.setVariable("newEmail", maskEmail(newEmail));
+        context.setVariable("changeTime", LocalDateTime.now().format(DATE_TIME_FORMATTER));
+        context.setVariable("platformName", platformName);
+        context.setVariable("supportEmail", supportEmail);
+
+        String html = templateEngine.process("email/email-changed-notification", context);
+        String subject = "E-mail Alterado - " + platformName;
+
+        sendHtmlEmail(oldEmail, subject, html);
+    }
+
+    /**
      * Envia email HTML usando Resend API.
      *
      * @param to      Destinatario

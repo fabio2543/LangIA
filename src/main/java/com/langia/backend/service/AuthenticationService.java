@@ -94,20 +94,20 @@ public class AuthenticationService {
         String token = jwtUtil.generateToken(user);
 
         // 4. Busca permissões do perfil
-        Set<String> permissions = permissionMapper.getPermissionsForProfile(user.getProfile());
+        Set<String> permissions = permissionMapper.getPermissionsForProfile(user.getProfileCode());
 
         // 5. Salva sessão no Redis
         SessionData sessionData = SessionData.builder()
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
-                .profile(user.getProfile())
+                .profile(user.getProfileCode())
                 .permissions(permissions)
                 .build();
 
         sessionService.saveSession(token, sessionData);
 
-        log.info("Login bem-sucedido para usuário: {} (Perfil: {})", user.getEmail(), user.getProfile());
+        log.info("Login bem-sucedido para usuário: {} (Perfil: {})", user.getEmail(), user.getProfileCode());
 
         // 6. Retorna resposta completa
         return LoginResponseDTO.builder()
@@ -115,7 +115,7 @@ public class AuthenticationService {
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
-                .profile(user.getProfile())
+                .profile(user.getProfileCode())
                 .permissions(permissions)
                 .expiresIn(jwtExpiration)
                 .build();

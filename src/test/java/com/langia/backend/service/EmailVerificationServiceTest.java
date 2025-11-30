@@ -30,6 +30,7 @@ import com.langia.backend.dto.ResendVerificationResponseDTO;
 import com.langia.backend.exception.EmailVerificationRateLimitException;
 import com.langia.backend.exception.InvalidVerificationTokenException;
 import com.langia.backend.model.EmailVerificationToken;
+import com.langia.backend.model.Profile;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.repository.EmailVerificationTokenRepository;
@@ -65,13 +66,22 @@ class EmailVerificationServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Cria perfil de teste
+        Profile studentProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.STUDENT)
+                .name("Student")
+                .hierarchyLevel(1)
+                .active(true)
+                .build();
+
         // Configuracao do usuario de teste
         testUser = User.builder()
                 .id(UUID.randomUUID())
                 .name("Test User")
                 .email("test@example.com")
                 .password("$2a$12$hashedPassword")
-                .profile(UserProfile.STUDENT)
+                .profile(studentProfile)
                 .cpfString("11144477735")
                 .phone("11987654321")
                 .emailVerified(false)

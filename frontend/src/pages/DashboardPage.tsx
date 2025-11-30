@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/common/Button';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../i18n';
@@ -64,6 +64,13 @@ export const DashboardPage = () => {
                 ))}
               </div>
 
+              {/* Botão Perfil */}
+              <Link to="/profile">
+                <Button variant="secondary" size="sm">
+                  {t.dashboard.myProfile}
+                </Button>
+              </Link>
+
               {/* Botão Logout */}
               <Button
                 variant="outline"
@@ -89,7 +96,7 @@ export const DashboardPage = () => {
               </h1>
               <p className="text-text-light">{t.dashboard.subtitle}</p>
             </div>
-            <div className="flex items-center gap-3">
+            <Link to="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
               <div className="w-16 h-16 rounded-full bg-primary-light flex items-center justify-center text-3xl">
                 {user.profile === 'TEACHER' ? '👨‍🏫' : '🎓'}
               </div>
@@ -97,7 +104,7 @@ export const DashboardPage = () => {
                 <p className="font-semibold text-text">{user.name}</p>
                 <p className="text-sm text-text-light">{profileLabel}</p>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
 

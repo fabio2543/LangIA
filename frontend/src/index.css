@@ -67,3 +67,28 @@ h1, h2, h3 {
 .bg-gradient-hero {
   background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-warm) 100%);
 }
+
+/* ============================================
+   Select/Dropdown Styles
+   ============================================ */
+
+select {
+  background-color: white;
+}
+
+select option {
+  background-color: white;
+  color: var(--color-text);
+  padding: 12px 16px;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background-color: var(--color-primary-light);
+  color: var(--color-text);
+}
+
+select option:disabled {
+  color: var(--color-text-light);
+}

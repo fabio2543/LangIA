@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.langia.backend.model.Profile;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
 
@@ -31,13 +32,21 @@ class JwtUtilTest {
 
     @BeforeEach
     void setUp() {
+        Profile studentProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.STUDENT)
+                .name("Student")
+                .hierarchyLevel(1)
+                .active(true)
+                .build();
+
         testUser = User.builder()
                 .id(UUID.randomUUID())
                 .name("João Silva")
                 .email("joao.silva@test.com")
                 .cpfString("12345678900")
                 .password("senhaEncriptada123")
-                .profile(UserProfile.STUDENT)
+                .profile(studentProfile)
                 .phone("11987654321")
                 .build();
     }
@@ -86,7 +95,7 @@ class JwtUtilTest {
         UserProfile profile = jwtUtil.extractUserProfile(token);
 
         // Then
-        assertEquals(testUser.getProfile(), profile, "Profile extraído deve ser igual ao profile do usuário");
+        assertEquals(testUser.getProfileCode(), profile, "Profile extraído deve ser igual ao profile do usuário");
     }
 
     @Test

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title th:text="${platformName} + ' - E-mail Alterado'">LangIA - E-mail Alterado</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f9fafb;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 32px 40px 24px 40px; text-align: center; border-bottom: 1px solid #e5e7eb;">
+                            <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #2563eb;" th:text="${platformName}">LangIA</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <!-- Success Icon -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td align="center" style="padding-bottom: 24px;">
+                                        <div style="display: inline-block; width: 64px; height: 64px; background-color: #d1fae5; border-radius: 50%; text-align: center; line-height: 64px;">
+                                            <span style="font-size: 32px; color: #059669;">&#10003;</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Greeting -->
+                            <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.5; color: #374151;">
+                                <span th:if="${userName != null and !userName.isEmpty()}">Olá, <strong th:text="${userName}">Usuário</strong>!</span>
+                                <span th:if="${userName == null or userName.isEmpty()}">Olá!</span>
+                            </p>
+
+                            <!-- Main Message -->
+                            <p style="margin: 0 0 16px 0; font-size: 16px; line-height: 1.5; color: #374151;">
+                                O e-mail da sua conta foi alterado com sucesso.
+                            </p>
+
+                            <!-- Change Details -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f0fdf4; border-radius: 6px; border-left: 4px solid #059669;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="margin: 0 0 8px 0; font-size: 14px; line-height: 1.5; color: #166534;">
+                                            <strong>Novo e-mail:</strong> <span th:text="${newEmail}">n***@exemplo.com</span>
+                                        </p>
+                                        <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #166534;">
+                                            <strong>Data e hora:</strong> <span th:text="${changeTime}">28/11/2025 14:30</span>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Security Warning -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #fef2f2; border-radius: 6px; border-left: 4px solid #dc2626; margin-top: 24px;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.5; color: #991b1b;">
+                                            <strong>Importante:</strong>
+                                        </p>
+                                        <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #991b1b;">
+                                            Se você <strong>não realizou esta alteração</strong>, sua conta pode estar comprometida. Entre em contato imediatamente com nosso suporte:
+                                        </p>
+                                        <p style="margin: 12px 0 0 0; font-size: 14px; line-height: 1.5;">
+                                            <a th:href="'mailto:' + ${supportEmail}" th:text="${supportEmail}" style="color: #dc2626; text-decoration: underline; font-weight: 600;">suporte@langia.com</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 24px 0 0 0; font-size: 14px; line-height: 1.5; color: #6b7280;">
+                                Este e-mail foi enviado para o seu antigo endereço como medida de segurança.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 24px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+                            <p style="margin: 0 0 8px 0; font-size: 12px; line-height: 1.5; color: #6b7280; text-align: center;">
+                                Este e-mail foi enviado automaticamente por <span th:text="${platformName}">LangIA</span>.
+                            </p>
+                            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #9ca3af; text-align: center;">
+                                Por favor, não responda a este e-mail.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
