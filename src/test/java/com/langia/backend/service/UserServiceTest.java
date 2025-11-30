@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.langia.backend.exception.EmailAlreadyExistsException;
+import com.langia.backend.model.Profile;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.repository.UserRepository;
@@ -59,6 +60,15 @@ class UserServiceTest {
         testPhone = "11987654321";
         testProfile = UserProfile.STUDENT;
 
+        // Cria perfil de teste
+        Profile studentProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.STUDENT)
+                .name("Student")
+                .hierarchyLevel(1)
+                .active(true)
+                .build();
+
         savedUser = User.builder()
                 .id(UUID.randomUUID())
                 .name(testName)
@@ -66,7 +76,7 @@ class UserServiceTest {
                 .password("$2a$12$hashedPassword")
                 .cpfString(testCpf)
                 .phone(testPhone)
-                .profile(testProfile)
+                .profile(studentProfile)
                 .build();
     }
 
@@ -91,7 +101,7 @@ class UserServiceTest {
         assertEquals("$2a$12$hashedPassword", result.getPassword());
         assertEquals(testCpf, result.getCpfString());
         assertEquals(testPhone, result.getPhone());
-        assertEquals(testProfile, result.getProfile());
+        assertEquals(testProfile, result.getProfileCode());
 
         // Verifica que o email foi verificado
         verify(userRepository).existsByEmail(testEmail);
@@ -150,6 +160,14 @@ class UserServiceTest {
         when(userRepository.existsByEmail(testEmail)).thenReturn(false);
         when(passwordEncoder.encode(testPassword)).thenReturn("$2a$12$hashedPassword");
 
+        Profile teacherProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.TEACHER)
+                .name("Teacher")
+                .hierarchyLevel(2)
+                .active(true)
+                .build();
+
         User teacherUser = User.builder()
                 .id(UUID.randomUUID())
                 .name(testName)
@@ -157,7 +175,7 @@ class UserServiceTest {
                 .password("$2a$12$hashedPassword")
                 .cpfString(testCpf)
                 .phone(testPhone)
-                .profile(UserProfile.TEACHER)
+                .profile(teacherProfile)
                 .build();
 
         when(userRepository.save(any(User.class))).thenReturn(teacherUser);
@@ -167,7 +185,7 @@ class UserServiceTest {
                 testName, testEmail, testPassword, testCpf, testPhone, UserProfile.TEACHER);
 
         // Assert
-        assertEquals(UserProfile.TEACHER, result.getProfile());
+        assertEquals(UserProfile.TEACHER, result.getProfileCode());
     }
 
     @Test
@@ -176,6 +194,14 @@ class UserServiceTest {
         when(userRepository.existsByEmail(testEmail)).thenReturn(false);
         when(passwordEncoder.encode(testPassword)).thenReturn("$2a$12$hashedPassword");
 
+        Profile adminProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.ADMIN)
+                .name("Admin")
+                .hierarchyLevel(3)
+                .active(true)
+                .build();
+
         User adminUser = User.builder()
                 .id(UUID.randomUUID())
                 .name(testName)
@@ -183,7 +209,7 @@ class UserServiceTest {
                 .password("$2a$12$hashedPassword")
                 .cpfString(testCpf)
                 .phone(testPhone)
-                .profile(UserProfile.ADMIN)
+                .profile(adminProfile)
                 .build();
 
         when(userRepository.save(any(User.class))).thenReturn(adminUser);
@@ -193,7 +219,7 @@ class UserServiceTest {
                 testName, testEmail, testPassword, testCpf, testPhone, UserProfile.ADMIN);
 
         // Assert
-        assertEquals(UserProfile.ADMIN, result.getProfile());
+        assertEquals(UserProfile.ADMIN, result.getProfileCode());
     }
 
     // ========== Testes de Validação de Email Duplicado ==========
@@ -249,6 +275,14 @@ class UserServiceTest {
         when(userRepository.existsByEmail(specificEmail)).thenReturn(false);
         when(passwordEncoder.encode(specificPassword)).thenReturn("$2a$12$hashedPassword");
 
+        Profile specificProfileEntity = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(specificProfile)
+                .name("Teacher")
+                .hierarchyLevel(2)
+                .active(true)
+                .build();
+
         User specificUser = User.builder()
                 .id(UUID.randomUUID())
                 .name(specificName)
@@ -256,7 +290,7 @@ class UserServiceTest {
                 .password("$2a$12$hashedPassword")
                 .cpfString(specificCpf)
                 .phone(specificPhone)
-                .profile(specificProfile)
+                .profile(specificProfileEntity)
                 .build();
 
         when(userRepository.save(any(User.class))).thenReturn(specificUser);
@@ -270,7 +304,7 @@ class UserServiceTest {
         assertEquals(specificEmail, result.getEmail());
         assertEquals(specificCpf, result.getCpfString());
         assertEquals(specificPhone, result.getPhone());
-        assertEquals(specificProfile, result.getProfile());
+        assertEquals(specificProfile, result.getProfileCode());
         assertNotNull(result.getPassword());
     }
 }

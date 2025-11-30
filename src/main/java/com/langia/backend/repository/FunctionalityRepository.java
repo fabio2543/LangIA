@@ -2,10 +2,9 @@ package com.langia.backend.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.langia.backend.model.Functionality;
@@ -15,7 +14,7 @@ import com.langia.backend.model.FunctionalityModule;
  * Repository para gerenciar funcionalidades do sistema.
  */
 @Repository
-public interface FunctionalityRepository extends JpaRepository<Functionality, Long> {
+public interface FunctionalityRepository extends JpaRepository<Functionality, UUID> {
 
     /**
      * Busca funcionalidade por código.

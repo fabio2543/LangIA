@@ -29,6 +29,7 @@ import com.langia.backend.exception.EmailAlreadyExistsException;
 import com.langia.backend.exception.InvalidEmailChangeCodeException;
 import com.langia.backend.exception.UserNotFoundException;
 import com.langia.backend.model.EmailChangeRequest;
+import com.langia.backend.model.Profile;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.repository.EmailChangeRequestRepository;
@@ -67,12 +68,21 @@ class EmailChangeServiceTest {
         newEmail = "newemail@example.com";
         validCode = "123456";
 
+        // Cria perfil de teste
+        Profile studentProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.STUDENT)
+                .name("Student")
+                .hierarchyLevel(1)
+                .active(true)
+                .build();
+
         testUser = User.builder()
                 .id(userId)
                 .name("Test User")
                 .email("oldemail@example.com")
                 .password("$2a$12$hashedPassword")
-                .profile(UserProfile.STUDENT)
+                .profile(studentProfile)
                 .emailVerified(true)
                 .build();
 

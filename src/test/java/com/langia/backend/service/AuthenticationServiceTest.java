@@ -29,6 +29,7 @@ import com.langia.backend.dto.LoginRequestDTO;
 import com.langia.backend.dto.LoginResponseDTO;
 import com.langia.backend.dto.SessionData;
 import com.langia.backend.exception.InvalidCredentialsException;
+import com.langia.backend.model.Profile;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.repository.UserRepository;
@@ -67,13 +68,22 @@ class AuthenticationServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Cria perfil de teste
+        Profile studentProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.STUDENT)
+                .name("Student")
+                .hierarchyLevel(1)
+                .active(true)
+                .build();
+
         // Configuração do usuário de teste (com email verificado para permitir login)
         testUser = User.builder()
                 .id(UUID.randomUUID())
                 .name("Test User")
                 .email("test@example.com")
                 .password("$2a$12$hashedPassword")
-                .profile(UserProfile.STUDENT)
+                .profile(studentProfile)
                 .cpfString("11144477735")
                 .phone("11987654321")
                 .emailVerified(true)
@@ -93,7 +103,7 @@ class AuthenticationServiceTest {
                 .userId(testUser.getId())
                 .name(testUser.getName())
                 .email(testUser.getEmail())
-                .profile(testUser.getProfile())
+                .profile(testUser.getProfileCode())
                 .permissions(testPermissions)
                 .createdAt(System.currentTimeMillis())
                 .build();
@@ -110,7 +120,7 @@ class AuthenticationServiceTest {
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(loginRequest.getPassword(), testUser.getPassword())).thenReturn(true);
         when(jwtUtil.generateToken(testUser)).thenReturn(testToken);
-        when(permissionMapper.getPermissionsForProfile(testUser.getProfile())).thenReturn(testPermissions);
+        when(permissionMapper.getPermissionsForProfile(testUser.getProfileCode())).thenReturn(testPermissions);
 
         // Act
         LoginResponseDTO response = authenticationService.login(loginRequest);
@@ -121,7 +131,7 @@ class AuthenticationServiceTest {
         assertEquals(testUser.getId(), response.getUserId());
         assertEquals(testUser.getName(), response.getName());
         assertEquals(testUser.getEmail(), response.getEmail());
-        assertEquals(testUser.getProfile(), response.getProfile());
+        assertEquals(testUser.getProfileCode(), response.getProfile());
         assertEquals(testPermissions, response.getPermissions());
         assertEquals(3600000L, response.getExpiresIn());
 
@@ -172,7 +182,7 @@ class AuthenticationServiceTest {
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(loginRequest.getPassword(), testUser.getPassword())).thenReturn(true);
         when(jwtUtil.generateToken(testUser)).thenReturn(testToken);
-        when(permissionMapper.getPermissionsForProfile(testUser.getProfile())).thenReturn(testPermissions);
+        when(permissionMapper.getPermissionsForProfile(testUser.getProfileCode())).thenReturn(testPermissions);
 
         // Act
         LoginResponseDTO response = authenticationService.login(loginRequest);
@@ -185,7 +195,7 @@ class AuthenticationServiceTest {
         assertTrue(response.getPermissions().contains("submit_exercises"));
 
         // Verifica que as permissões foram buscadas
-        verify(permissionMapper).getPermissionsForProfile(testUser.getProfile());
+        verify(permissionMapper).getPermissionsForProfile(testUser.getProfileCode());
     }
 
     // ========== Testes de Validação de Sessão ==========
@@ -353,11 +363,17 @@ class AuthenticationServiceTest {
     @Test
     void deveRealizarLoginComPerfilTeacher() {
         // Arrange
-        testUser.setProfile(UserProfile.TEACHER);
+        Profile teacherProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.TEACHER)
+                .name("Teacher")
+                .hierarchyLevel(2)
+                .active(true)
+                .build();
+        testUser.setProfile(teacherProfile);
         Set<String> teacherPermissions = Set.of(
                 "view_courses", "create_courses", "edit_courses",
-                "view_students", "grade_exercises"
-        );
+                "view_students", "grade_exercises");
 
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(loginRequest.getPassword(), testUser.getPassword())).thenReturn(true);
@@ -375,11 +391,17 @@ class AuthenticationServiceTest {
     @Test
     void deveRealizarLoginComPerfilAdmin() {
         // Arrange
-        testUser.setProfile(UserProfile.ADMIN);
+        Profile adminProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.ADMIN)
+                .name("Admin")
+                .hierarchyLevel(3)
+                .active(true)
+                .build();
+        testUser.setProfile(adminProfile);
         Set<String> adminPermissions = Set.of(
                 "view_courses", "create_courses", "manage_users",
-                "view_system_stats", "manage_settings"
-        );
+                "view_system_stats", "manage_settings");
 
         when(userRepository.findByEmail(loginRequest.getEmail())).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches(loginRequest.getPassword(), testUser.getPassword())).thenReturn(true);
