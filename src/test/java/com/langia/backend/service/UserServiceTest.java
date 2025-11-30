@@ -9,6 +9,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,7 @@ import com.langia.backend.exception.EmailAlreadyExistsException;
 import com.langia.backend.model.Profile;
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
+import com.langia.backend.repository.ProfileRepository;
 import com.langia.backend.repository.UserRepository;
 
 /**
@@ -33,6 +35,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ProfileRepository profileRepository;
 
     @Mock
     private BCryptPasswordEncoder passwordEncoder;
@@ -50,6 +55,9 @@ class UserServiceTest {
     private String testPhone;
     private UserProfile testProfile;
     private User savedUser;
+    private Profile studentProfile;
+    private Profile teacherProfile;
+    private Profile adminProfile;
 
     @BeforeEach
     void setUp() {
@@ -60,12 +68,28 @@ class UserServiceTest {
         testPhone = "11987654321";
         testProfile = UserProfile.STUDENT;
 
-        // Cria perfil de teste
-        Profile studentProfile = Profile.builder()
+        // Cria perfis de teste
+        studentProfile = Profile.builder()
                 .id(UUID.randomUUID())
                 .code(UserProfile.STUDENT)
                 .name("Student")
                 .hierarchyLevel(1)
+                .active(true)
+                .build();
+
+        teacherProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.TEACHER)
+                .name("Teacher")
+                .hierarchyLevel(2)
+                .active(true)
+                .build();
+
+        adminProfile = Profile.builder()
+                .id(UUID.randomUUID())
+                .code(UserProfile.ADMIN)
+                .name("Admin")
+                .hierarchyLevel(3)
                 .active(true)
                 .build();
 
@@ -86,6 +110,7 @@ class UserServiceTest {
     void deveRegistrarUsuarioComSucesso() {
         // Arrange
         when(userRepository.existsByEmail(testEmail)).thenReturn(false);
+        when(profileRepository.findByCode(testProfile)).thenReturn(Optional.of(studentProfile));
         when(passwordEncoder.encode(testPassword)).thenReturn("$2a$12$hashedPassword");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
@@ -115,6 +140,7 @@ class UserServiceTest {
     void deveIncluirNameNoUsuarioRegistrado() {
         // Arrange
         when(userRepository.existsByEmail(testEmail)).thenReturn(false);
+        when(profileRepository.findByCode(testProfile)).thenReturn(Optional.of(studentProfile));
         when(passwordEncoder.encode(testPassword)).thenReturn("$2a$12$hashedPassword");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
@@ -140,6 +166,7 @@ class UserServiceTest {
         String hashedPassword = "$2a$12$hash.muito.longo.e.seguro";
 
         when(userRepository.existsByEmail(testEmail)).thenReturn(false);
+        when(profileRepository.findByCode(testProfile)).thenReturn(Optional.of(studentProfile));
         when(passwordEncoder.encode(plainPassword)).thenReturn(hashedPassword);
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
 
@@ -158,15 +185,8 @@ class UserServiceTest {
     void deveRegistrarUsuarioComPerfilTeacher() {
         // Arrange
         when(userRepository.existsByEmail(testEmail)).thenReturn(false);
+        when(profileRepository.findByCode(UserProfile.TEACHER)).thenReturn(Optional.of(teacherProfile));
         when(passwordEncoder.encode(testPassword)).thenReturn("$2a$12$hashedPassword");
-
-        Profile teacherProfile = Profile.builder()
-                .id(UUID.randomUUID())
-                .code(UserProfile.TEACHER)
-                .name("Teacher")
-                .hierarchyLevel(2)
-                .active(true)
-                .build();
 
         User teacherUser = User.builder()
                 .id(UUID.randomUUID())
@@ -192,15 +212,8 @@ class UserServiceTest {
     void deveRegistrarUsuarioComPerfilAdmin() {
         // Arrange
         when(userRepository.existsByEmail(testEmail)).thenReturn(false);
+        when(profileRepository.findByCode(UserProfile.ADMIN)).thenReturn(Optional.of(adminProfile));
         when(passwordEncoder.encode(testPassword)).thenReturn("$2a$12$hashedPassword");
-
-        Profile adminProfile = Profile.builder()
-                .id(UUID.randomUUID())
-                .code(UserProfile.ADMIN)
-                .name("Admin")
-                .hierarchyLevel(3)
-                .active(true)
-                .build();
 
         User adminUser = User.builder()
                 .id(UUID.randomUUID())
@@ -273,15 +286,8 @@ class UserServiceTest {
         UserProfile specificProfile = UserProfile.TEACHER;
 
         when(userRepository.existsByEmail(specificEmail)).thenReturn(false);
+        when(profileRepository.findByCode(specificProfile)).thenReturn(Optional.of(teacherProfile));
         when(passwordEncoder.encode(specificPassword)).thenReturn("$2a$12$hashedPassword");
-
-        Profile specificProfileEntity = Profile.builder()
-                .id(UUID.randomUUID())
-                .code(specificProfile)
-                .name("Teacher")
-                .hierarchyLevel(2)
-                .active(true)
-                .build();
 
         User specificUser = User.builder()
                 .id(UUID.randomUUID())
@@ -290,7 +296,7 @@ class UserServiceTest {
                 .password("$2a$12$hashedPassword")
                 .cpfString(specificCpf)
                 .phone(specificPhone)
-                .profile(specificProfileEntity)
+                .profile(teacherProfile)
                 .build();
 
         when(userRepository.save(any(User.class))).thenReturn(specificUser);
