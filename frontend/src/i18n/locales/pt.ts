@@ -400,6 +400,8 @@ export const pt = {
       saving: 'Salvando...',
       successMessage: 'Autoavaliação salva com sucesso!',
       cancel: 'Cancelar',
+      noPrimaryLanguageWarning:
+        'Você ainda não definiu um idioma de preferência. Selecione um idioma abaixo ou configure seu idioma principal na aba de Idiomas.',
     },
     notificationSettings: {
       title: 'Configurações de Notificação',

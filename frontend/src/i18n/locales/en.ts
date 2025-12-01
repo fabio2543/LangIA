@@ -400,6 +400,8 @@ export const en = {
       saving: 'Saving...',
       successMessage: 'Self-assessment saved successfully!',
       cancel: 'Cancel',
+      noPrimaryLanguageWarning:
+        'You have not set a preferred language yet. Select a language below or set your primary language in the Languages tab.',
     },
     notificationSettings: {
       title: 'Notification Settings',
