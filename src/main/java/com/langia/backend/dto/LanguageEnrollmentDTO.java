@@ -3,6 +3,7 @@ package com.langia.backend.dto;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.langia.backend.model.StudentLanguageEnrollment;
 
 import lombok.AllArgsConstructor;
@@ -21,9 +22,14 @@ public class LanguageEnrollmentDTO {
 
     private UUID id;
     private String languageCode;
-    private String languageName;
+    private String languageNamePt;
+    private String languageNameEn;
+    private String languageNameEs;
     private String cefrLevel;
+
+    @JsonProperty("isPrimary")
     private boolean isPrimary;
+
     private LocalDateTime enrolledAt;
     private LocalDateTime lastStudiedAt;
 
@@ -34,7 +40,9 @@ public class LanguageEnrollmentDTO {
         return LanguageEnrollmentDTO.builder()
                 .id(enrollment.getId())
                 .languageCode(enrollment.getLanguage().getCode())
-                .languageName(enrollment.getLanguage().getNamePt())
+                .languageNamePt(enrollment.getLanguage().getNamePt())
+                .languageNameEn(enrollment.getLanguage().getNameEn())
+                .languageNameEs(enrollment.getLanguage().getNameEs())
                 .cefrLevel(enrollment.getCefrLevel())
                 .isPrimary(enrollment.isPrimary())
                 .enrolledAt(enrollment.getEnrolledAt())

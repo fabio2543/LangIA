@@ -53,6 +53,9 @@ class EmailChangeServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private AuditService auditService;
+
     @InjectMocks
     private EmailChangeService emailChangeService;
 
@@ -274,5 +277,50 @@ class EmailChangeServiceTest {
         // Assert - Verifica que usou o metodo otimizado e nao findAll
         verify(requestRepository).findActiveRequestsByUserId(eq(userId), any(LocalDateTime.class));
         verify(requestRepository, never()).findAll();
+    }
+
+    // ========== AC-AU-001: Auditoria ==========
+
+    @Test
+    void deveRegistrarAuditoriaAoAlterarEmail() {
+        // Arrange
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(requestRepository.findActiveRequestsByUserId(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(List.of(validRequest));
+        when(passwordEncoder.matches(validCode, validRequest.getTokenHash())).thenReturn(true);
+        when(userRepository.existsByEmail(newEmail)).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(requestRepository.save(any(EmailChangeRequest.class))).thenReturn(validRequest);
+
+        // Act
+        emailChangeService.confirmEmailChange(userId, validCode);
+
+        // Assert - Verifica que a auditoria foi registrada
+        verify(auditService).logUpdate(
+                eq("USER_EMAIL"),
+                eq(userId),
+                any(),
+                any(),
+                eq(userId)
+        );
+    }
+
+    @Test
+    void naoDeveRegistrarAuditoriaQuandoCodigoInvalido() {
+        // Arrange
+        String invalidCode = "999999";
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(requestRepository.findActiveRequestsByUserId(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(List.of(validRequest));
+        when(passwordEncoder.matches(invalidCode, validRequest.getTokenHash())).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(
+                InvalidEmailChangeCodeException.class,
+                () -> emailChangeService.confirmEmailChange(userId, invalidCode)
+        );
+
+        // Verifica que a auditoria NAO foi registrada
+        verify(auditService, never()).logUpdate(anyString(), any(UUID.class), any(), any(), any(UUID.class));
     }
 }

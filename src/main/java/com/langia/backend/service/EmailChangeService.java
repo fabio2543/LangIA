@@ -31,6 +31,7 @@ public class EmailChangeService {
     private final EmailChangeRequestRepository requestRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final AuditService auditService;
 
     private static final int CODE_LENGTH = 6;
     private static final int EXPIRATION_MINUTES = 15;
@@ -106,6 +107,15 @@ public class EmailChangeService {
         // Mark request as used
         request.markAsUsed();
         requestRepository.save(request);
+
+        // Audit log - AC-AU-001
+        auditService.logUpdate(
+                "USER_EMAIL",
+                userId,
+                java.util.Map.of("email", oldEmail),
+                java.util.Map.of("email", request.getNewEmail()),
+                userId
+        );
 
         // Notify old email
         emailService.sendEmailChangedNotification(oldEmail, user.getName(), request.getNewEmail());
