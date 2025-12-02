@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.langia.backend.exception.EmailAlreadyExistsException;
 import com.langia.backend.exception.InvalidEmailChangeCodeException;
+import com.langia.backend.exception.RateLimitExceededException;
 import com.langia.backend.exception.UserNotFoundException;
 import com.langia.backend.model.EmailChangeRequest;
 import com.langia.backend.model.User;
@@ -32,6 +33,7 @@ public class EmailChangeService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
+    private final EmailChangeRateLimitService rateLimitService;
 
     private static final int CODE_LENGTH = 6;
     private static final int EXPIRATION_MINUTES = 15;
@@ -76,12 +78,21 @@ public class EmailChangeService {
 
     /**
      * Confirm an email change using the verification code.
+     * Implements rate limiting to prevent brute-force attacks on the 6-digit code.
      *
      * @param userId The user confirming the change
      * @param code   The verification code
+     * @throws RateLimitExceededException if too many failed attempts
      */
     @Transactional
     public void confirmEmailChange(UUID userId, String code) {
+        // Check rate limit before processing
+        if (rateLimitService.isAttemptLimitReached(userId)) {
+            long lockoutTime = rateLimitService.getLockoutTimeRemaining(userId);
+            log.warn("Email change verification blocked for user {} - rate limit exceeded", userId);
+            throw new RateLimitExceededException(lockoutTime > 0 ? lockoutTime : 3600);
+        }
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
@@ -89,6 +100,12 @@ public class EmailChangeService {
         EmailChangeRequest request = findValidRequest(userId, code);
 
         if (request == null) {
+            // Record failed attempt and check if should lock
+            boolean locked = rateLimitService.recordFailedAttempt(userId);
+            if (locked) {
+                long lockoutTime = rateLimitService.getLockoutTimeRemaining(userId);
+                throw new RateLimitExceededException(lockoutTime > 0 ? lockoutTime : 3600);
+            }
             throw new InvalidEmailChangeCodeException("Invalid or expired code");
         }
 
@@ -107,6 +124,9 @@ public class EmailChangeService {
         // Mark request as used
         request.markAsUsed();
         requestRepository.save(request);
+
+        // Clear rate limit attempts on successful verification
+        rateLimitService.clearAttempts(userId);
 
         // Audit log - AC-AU-001
         auditService.logUpdate(
