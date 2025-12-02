@@ -20,6 +20,7 @@ export const SkillAssessmentTab = () => {
 
   const [assessments, setAssessments] = useState<SkillAssessmentResponse[]>([]);
   const [enrollments, setEnrollments] = useState<LanguageEnrollment[]>([]);
+  const [noPrimaryLanguage, setNoPrimaryLanguage] = useState(false);
 
   const [formData, setFormData] = useState<SkillAssessment>({
     language: '',
@@ -56,6 +57,19 @@ export const SkillAssessmentTab = () => {
     loadData();
   }, []);
 
+  // Pré-selecionar idioma primário quando enrollments carregarem
+  useEffect(() => {
+    if (enrollments.length > 0 && !formData.language) {
+      const primaryEnrollment = enrollments.find((e) => e.isPrimary);
+      if (primaryEnrollment) {
+        setFormData((prev) => ({ ...prev, language: primaryEnrollment.languageCode }));
+        setNoPrimaryLanguage(false);
+      } else {
+        setNoPrimaryLanguage(true);
+      }
+    }
+  }, [enrollments, formData.language]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.language) {
@@ -82,8 +96,9 @@ export const SkillAssessmentTab = () => {
   };
 
   const resetForm = () => {
+    const primaryEnrollment = enrollments.find((e) => e.isPrimary);
     setFormData({
-      language: '',
+      language: primaryEnrollment?.languageCode || '',
       listeningDifficulty: 'MODERATE',
       speakingDifficulty: 'MODERATE',
       readingDifficulty: 'MODERATE',
@@ -185,6 +200,11 @@ export const SkillAssessmentTab = () => {
       {showForm ? (
         // Formulário de nova avaliação
         <form onSubmit={handleSubmit} className="space-y-6">
+          {noPrimaryLanguage && (
+            <Alert variant="warning">
+              {t.profile.skillAssessment.noPrimaryLanguageWarning}
+            </Alert>
+          )}
           <Select
             label={t.profile.skillAssessment.selectLanguage}
             value={formData.language}

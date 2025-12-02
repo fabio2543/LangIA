@@ -1,19 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { AuthUser, LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from '../types';
 import { authService, handleApiError, AUTH_ERROR_EVENT, type ApiError } from '../services/api';
-
-interface AuthContextType {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (data: LoginRequest) => Promise<void>;
-  register: (data: RegisterRequest) => Promise<RegisterResponse>;
-  logout: () => Promise<void>;
-  error: ApiError | null;
-  clearError: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from './AuthContextDef';
 
 const STORAGE_KEYS = {
   // Token agora é gerenciado via cookie HttpOnly (mais seguro contra XSS)
@@ -27,36 +15,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Inicializa o estado de auth validando com o backend
   // O token JWT é gerenciado via cookie HttpOnly pelo backend
+  // IMPORTANTE: Sempre valida com o backend, mesmo sem cache local,
+  // pois o usuário pode ter um cookie HttpOnly válido de outra aba/sessão
   useEffect(() => {
     const initAuth = async () => {
-      const storedUser = localStorage.getItem(STORAGE_KEYS.USER);
+      try {
+        // Sempre valida sessão com o backend (cookie HttpOnly)
+        const validation = await authService.validateSession();
 
-      if (storedUser) {
-        try {
-          // Valida a sessão com o backend antes de confiar no localStorage
-          const validation = await authService.validateSession();
-
-          if (validation.valid && validation.session) {
-            // Sessão válida - atualiza com dados frescos do backend
-            const authUser: AuthUser = {
-              id: validation.session.userId,
-              name: validation.session.name,
-              email: validation.session.email,
-              profile: validation.session.profile,
-              permissions: validation.session.permissions,
-            };
-            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
-            setUser(authUser);
-          } else {
-            // Sessão inválida - limpa dados locais
-            localStorage.removeItem(STORAGE_KEYS.USER);
-            setUser(null);
-          }
-        } catch {
-          // Erro na validação (ex: backend indisponível) - limpa dados locais
+        if (validation.valid && validation.session) {
+          // Sessão válida - atualiza com dados frescos do backend
+          const authUser: AuthUser = {
+            id: validation.session.userId,
+            name: validation.session.name,
+            email: validation.session.email,
+            profile: validation.session.profile,
+            permissions: validation.session.permissions,
+          };
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
+          setUser(authUser);
+        } else {
+          // Sessão inválida - limpa dados locais
           localStorage.removeItem(STORAGE_KEYS.USER);
           setUser(null);
         }
+      } catch {
+        // Erro na validação (ex: backend indisponível) - limpa dados locais
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        setUser(null);
       }
       setIsLoading(false);
     };
@@ -165,10 +151,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};

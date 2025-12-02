@@ -1,4 +1,5 @@
 
+Sempre consultar as variveis de ambiente no arquivo .env
 
 Backend (quando trabalhar em /backend)
 

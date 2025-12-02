@@ -154,6 +154,9 @@ export const es = {
       requiredField: 'Campo obligatorio',
       termsRequired: 'Debes aceptar los términos de uso',
       genericError: 'Ocurrió un error. Inténtalo de nuevo.',
+      tooManyAttempts: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
+      serverError: 'Error del servidor. Inténtalo más tarde.',
+      networkError: 'Error de conexión. Verifica tu internet.',
     },
     forgotPassword: {
       title: 'Olvidé mi contraseña',
@@ -400,6 +403,8 @@ export const es = {
       saving: 'Guardando...',
       successMessage: '¡Autoevaluación guardada con éxito!',
       cancel: 'Cancelar',
+      noPrimaryLanguageWarning:
+        'Aún no has definido un idioma de preferencia. Selecciona un idioma a continuación o configura tu idioma principal en la pestaña de Idiomas.',
     },
     notificationSettings: {
       title: 'Configuración de Notificaciones',

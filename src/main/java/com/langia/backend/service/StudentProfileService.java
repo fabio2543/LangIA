@@ -19,6 +19,9 @@ import com.langia.backend.dto.SkillAssessmentDTO;
 import com.langia.backend.dto.SkillAssessmentResponseDTO;
 import com.langia.backend.dto.UpdatePersonalDataDTO;
 import com.langia.backend.dto.UserProfileDetailsDTO;
+import com.langia.backend.dto.student.PersonalDataDTO;
+import com.langia.backend.dto.student.UpdatePersonalDataRequest;
+import com.langia.backend.model.AuditLog.AuditAction;
 import com.langia.backend.exception.UserNotFoundException;
 import com.langia.backend.model.NotificationCategory;
 import com.langia.backend.model.NotificationChannel;
@@ -51,10 +54,100 @@ public class StudentProfileService {
     private final StudentLearningPreferencesRepository preferencesRepository;
     private final StudentSkillAssessmentRepository assessmentRepository;
     private final NotificationSettingsRepository notificationRepository;
+    private final AuditService auditService;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-    // ========== Profile Details ==========
+    // ========== Personal Data (AC-DP-001 to AC-DP-004) ==========
+
+    /**
+     * Obtém os dados pessoais do estudante.
+     * Implementa AC-DP-001: Visualização de dados pessoais.
+     *
+     * @param userId ID do usuário
+     * @return DTO com dados pessoais completos
+     */
+    @Transactional(readOnly = true)
+    public PersonalDataDTO getPersonalData(UUID userId) {
+        User user = findUserOrThrow(userId);
+        UserProfileDetails details = profileDetailsRepository.findByUserId(userId)
+                .orElse(null);
+        return mapToPersonalDataDTO(user, details);
+    }
+
+    /**
+     * Atualiza os dados pessoais do estudante.
+     * Implementa AC-DP-002, AC-DP-003, AC-DP-004.
+     *
+     * @param userId  ID do usuário
+     * @param request Dados a serem atualizados (campos opcionais)
+     * @return DTO com dados pessoais atualizados
+     */
+    @Transactional
+    public PersonalDataDTO updatePersonalData(UUID userId, UpdatePersonalDataRequest request) {
+        User user = findUserOrThrow(userId);
+        UserProfileDetails details = profileDetailsRepository.findByUserId(userId)
+                .orElseGet(() -> UserProfileDetails.builder()
+                        .user(user)
+                        .timezone("America/Sao_Paulo")
+                        .build());
+
+        // Captura estado anterior para auditoria
+        PersonalDataDTO oldData = mapToPersonalDataDTO(user, details);
+
+        // Atualiza campos do usuário se presentes
+        if (request.getName() != null) {
+            user.setName(request.getName());
+        }
+
+        // Atualiza campos do perfil se presentes
+        if (request.getBirthDate() != null) {
+            details.setBirthDate(request.getBirthDate());
+        }
+        if (request.getNativeLanguage() != null) {
+            details.setNativeLanguage(request.getNativeLanguage());
+        }
+        if (request.getTimezone() != null) {
+            details.setTimezone(request.getTimezone());
+        }
+        if (request.getBio() != null) {
+            details.setBio(request.getBio());
+        }
+
+        // Salva alterações
+        userRepository.save(user);
+        profileDetailsRepository.save(details);
+
+        PersonalDataDTO newData = mapToPersonalDataDTO(user, details);
+
+        // Registra auditoria
+        auditService.logUpdate("USER_PERSONAL_DATA", userId, oldData, newData, userId);
+
+        log.info("Personal data updated for user {} (AC-DP-002)", userId);
+        return newData;
+    }
+
+    /**
+     * Mapeia User e UserProfileDetails para PersonalDataDTO.
+     */
+    private PersonalDataDTO mapToPersonalDataDTO(User user, UserProfileDetails details) {
+        return PersonalDataDTO.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .birthDate(details != null ? details.getBirthDate() : null)
+                .nativeLanguage(details != null ? details.getNativeLanguage() : null)
+                .timezone(details != null ? details.getTimezone() : "America/Sao_Paulo")
+                .bio(details != null ? details.getBio() : null)
+                .emailVerified(user.isEmailVerified())
+                .emailVerifiedAt(user.getEmailVerifiedAt())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+    }
+
+    // ========== Profile Details (Legacy) ==========
 
     @Transactional(readOnly = true)
     public UserProfileDetailsDTO getProfileDetails(UUID userId) {
@@ -114,6 +207,9 @@ public class StudentProfileService {
         StudentLearningPreferences prefs = preferencesRepository.findByUserId(userId)
                 .orElse(StudentLearningPreferences.builder().user(user).build());
 
+        // Captura estado anterior para auditoria
+        LearningPreferencesDTO oldData = mapToLearningPreferencesDTO(prefs);
+
         // Map fields from DTO (all are now strings/lists of strings)
         prefs.setDailyTimeAvailable(dto.getDailyTimeAvailable());
         prefs.setPreferredDays(dto.getPreferredDays() != null ? dto.getPreferredDays() : new ArrayList<>());
@@ -128,8 +224,14 @@ public class StudentProfileService {
         prefs.setObjectiveDeadline(dto.getObjectiveDeadline());
 
         preferencesRepository.save(prefs);
-        log.info("Learning preferences updated for user {}", userId);
-        return mapToLearningPreferencesDTO(prefs);
+
+        LearningPreferencesDTO newData = mapToLearningPreferencesDTO(prefs);
+
+        // Registra auditoria - AC-AU-001
+        auditService.logUpdate("LEARNING_PREFERENCES", userId, oldData, newData, userId);
+
+        log.info("Learning preferences updated for user {} (AC-LP-002)", userId);
+        return newData;
     }
 
     // ========== Skill Assessment ==========
@@ -160,9 +262,15 @@ public class StudentProfileService {
                 .selfCefrLevel(dto.getSelfCefrLevel())
                 .build();
 
-        assessmentRepository.save(assessment);
-        log.info("Skill assessment created for user {} in language {}", userId, dto.getLanguage());
-        return mapToSkillAssessmentResponseDTO(assessment);
+        assessment = assessmentRepository.save(assessment);
+
+        SkillAssessmentResponseDTO result = mapToSkillAssessmentResponseDTO(assessment);
+
+        // Registra auditoria - AC-AU-001
+        auditService.logCreate("SKILL_ASSESSMENT", assessment.getId(), result, userId);
+
+        log.info("Skill assessment created for user {} in language {} (AC-SA-002)", userId, dto.getLanguage());
+        return result;
     }
 
     // ========== Notification Settings ==========
@@ -180,6 +288,9 @@ public class StudentProfileService {
 
         NotificationSettingsEntity settings = notificationRepository.findByUserId(userId)
                 .orElse(NotificationSettingsEntity.builder().user(user).build());
+
+        // Captura estado anterior para auditoria - AC-AU-001
+        NotificationSettingsDTO oldSettings = mapToNotificationSettingsDTO(settings);
 
         // Convert channel map
         if (dto.getActiveChannels() != null) {
@@ -207,8 +318,14 @@ public class StudentProfileService {
         settings.setQuietModeEnd(parseTime(dto.getQuietModeEnd()));
 
         notificationRepository.save(settings);
-        log.info("Notification settings updated for user {}", userId);
-        return mapToNotificationSettingsDTO(settings);
+
+        NotificationSettingsDTO newSettings = mapToNotificationSettingsDTO(settings);
+
+        // Registra auditoria - AC-AU-001
+        auditService.logUpdate("NOTIFICATION_SETTINGS", userId, oldSettings, newSettings, userId);
+
+        log.info("Notification settings updated for user {} (AC-NF-002)", userId);
+        return newSettings;
     }
 
     // ========== Helper Methods ==========

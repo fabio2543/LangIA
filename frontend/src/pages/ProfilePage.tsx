@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../i18n';
 import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { TabNavigation } from '../components/profile/TabNavigation';

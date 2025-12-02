@@ -27,6 +27,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.langia.backend.exception.EmailAlreadyExistsException;
 import com.langia.backend.exception.InvalidEmailChangeCodeException;
+import com.langia.backend.exception.RateLimitExceededException;
 import com.langia.backend.exception.UserNotFoundException;
 import com.langia.backend.model.EmailChangeRequest;
 import com.langia.backend.model.Profile;
@@ -52,6 +53,12 @@ class EmailChangeServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private AuditService auditService;
+
+    @Mock
+    private EmailChangeRateLimitService rateLimitService;
 
     @InjectMocks
     private EmailChangeService emailChangeService;
@@ -274,5 +281,128 @@ class EmailChangeServiceTest {
         // Assert - Verifica que usou o metodo otimizado e nao findAll
         verify(requestRepository).findActiveRequestsByUserId(eq(userId), any(LocalDateTime.class));
         verify(requestRepository, never()).findAll();
+    }
+
+    // ========== AC-AU-001: Auditoria ==========
+
+    @Test
+    void deveRegistrarAuditoriaAoAlterarEmail() {
+        // Arrange
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(requestRepository.findActiveRequestsByUserId(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(List.of(validRequest));
+        when(passwordEncoder.matches(validCode, validRequest.getTokenHash())).thenReturn(true);
+        when(userRepository.existsByEmail(newEmail)).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(requestRepository.save(any(EmailChangeRequest.class))).thenReturn(validRequest);
+
+        // Act
+        emailChangeService.confirmEmailChange(userId, validCode);
+
+        // Assert - Verifica que a auditoria foi registrada
+        verify(auditService).logUpdate(
+                eq("USER_EMAIL"),
+                eq(userId),
+                any(),
+                any(),
+                eq(userId)
+        );
+    }
+
+    @Test
+    void naoDeveRegistrarAuditoriaQuandoCodigoInvalido() {
+        // Arrange
+        String invalidCode = "999999";
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(requestRepository.findActiveRequestsByUserId(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(List.of(validRequest));
+        when(passwordEncoder.matches(invalidCode, validRequest.getTokenHash())).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(
+                InvalidEmailChangeCodeException.class,
+                () -> emailChangeService.confirmEmailChange(userId, invalidCode)
+        );
+
+        // Verifica que a auditoria NAO foi registrada
+        verify(auditService, never()).logUpdate(anyString(), any(UUID.class), any(), any(), any(UUID.class));
+    }
+
+    // ========== Rate Limiting Tests ==========
+
+    @Test
+    void deveBloquearVerificacaoQuandoRateLimitAtingido() {
+        // Arrange
+        when(rateLimitService.isAttemptLimitReached(userId)).thenReturn(true);
+        when(rateLimitService.getLockoutTimeRemaining(userId)).thenReturn(3600L);
+
+        // Act & Assert
+        RateLimitExceededException exception = assertThrows(
+                RateLimitExceededException.class,
+                () -> emailChangeService.confirmEmailChange(userId, validCode)
+        );
+
+        assertEquals(3600L, exception.getRetryAfterSeconds());
+        verify(userRepository, never()).findById(any(UUID.class));
+    }
+
+    @Test
+    void deveRegistrarTentativaFalhaNoRateLimit() {
+        // Arrange
+        String invalidCode = "999999";
+        when(rateLimitService.isAttemptLimitReached(userId)).thenReturn(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(requestRepository.findActiveRequestsByUserId(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(List.of(validRequest));
+        when(passwordEncoder.matches(invalidCode, validRequest.getTokenHash())).thenReturn(false);
+        when(rateLimitService.recordFailedAttempt(userId)).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(
+                InvalidEmailChangeCodeException.class,
+                () -> emailChangeService.confirmEmailChange(userId, invalidCode)
+        );
+
+        verify(rateLimitService).recordFailedAttempt(userId);
+    }
+
+    @Test
+    void deveLimparTentativasAposSucesso() {
+        // Arrange
+        when(rateLimitService.isAttemptLimitReached(userId)).thenReturn(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(requestRepository.findActiveRequestsByUserId(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(List.of(validRequest));
+        when(passwordEncoder.matches(validCode, validRequest.getTokenHash())).thenReturn(true);
+        when(userRepository.existsByEmail(newEmail)).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        when(requestRepository.save(any(EmailChangeRequest.class))).thenReturn(validRequest);
+
+        // Act
+        emailChangeService.confirmEmailChange(userId, validCode);
+
+        // Assert
+        verify(rateLimitService).clearAttempts(userId);
+    }
+
+    @Test
+    void deveLancarRateLimitQuandoAtingeLimiteAposFalha() {
+        // Arrange
+        String invalidCode = "999999";
+        when(rateLimitService.isAttemptLimitReached(userId)).thenReturn(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(requestRepository.findActiveRequestsByUserId(eq(userId), any(LocalDateTime.class)))
+                .thenReturn(List.of(validRequest));
+        when(passwordEncoder.matches(invalidCode, validRequest.getTokenHash())).thenReturn(false);
+        when(rateLimitService.recordFailedAttempt(userId)).thenReturn(true); // Locked after this attempt
+        when(rateLimitService.getLockoutTimeRemaining(userId)).thenReturn(3600L);
+
+        // Act & Assert
+        RateLimitExceededException exception = assertThrows(
+                RateLimitExceededException.class,
+                () -> emailChangeService.confirmEmailChange(userId, invalidCode)
+        );
+
+        assertEquals(3600L, exception.getRetryAfterSeconds());
     }
 }

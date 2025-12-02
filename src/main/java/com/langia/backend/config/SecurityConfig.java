@@ -36,15 +36,23 @@ public class SecurityConfig {
      * Define:
      * - Rotas públicas que não exigem autenticação
      * - Rotas protegidas que exigem token JWT válido
-     * - Desabilita CSRF (não necessário para API stateless)
+     * - Desabilita CSRF do Spring (proteção via SameSite cookie)
      * - Configura política de sessão como STATELESS (usando JWT, não sessões HTTP)
      * - Injeta o filtro JWT na cadeia de filtros
      * - Configura handlers customizados para erros de autenticação/autorização
+     *
+     * NOTA DE SEGURANÇA (CSRF):
+     * O CSRF do Spring Security está desabilitado porque usamos cookies HttpOnly com
+     * atributo SameSite=Lax (configurável para Strict em produção). O SameSite previne
+     * que o cookie seja enviado em requisições cross-site, fornecendo proteção equivalente
+     * ou superior ao token CSRF tradicional para navegadores modernos.
+     * Ver: https://owasp.org/www-community/SameSite
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // Desabilita CSRF pois API é stateless com JWT
+            // CSRF desabilitado - proteção fornecida pelo atributo SameSite do cookie
+            // O cookie JWT usa SameSite=Lax/Strict (configurado via auth.cookie.same-site)
             .csrf(csrf -> csrf.disable())
 
             // Configura autorização de requisições

@@ -1,4 +1,4 @@
-import { type InputHTMLAttributes, type ReactNode, useState } from 'react';
+import { type InputHTMLAttributes, type ReactNode, useState, useId } from 'react';
 import { cn } from '../../utils/cn';
 
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
@@ -27,7 +27,8 @@ export const Input = ({
   ...props
 }: InputProps) => {
   const [showPassword, setShowPassword] = useState(false);
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
+  const generatedId = useId();
+  const inputId = id || `input-${generatedId}`;
   const isPassword = type === 'password';
   const inputType = isPassword && showPassword ? 'text' : type;
 
