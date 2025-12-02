@@ -154,6 +154,9 @@ export const pt = {
       requiredField: 'Campo obrigatório',
       termsRequired: 'Você deve aceitar os termos de uso',
       genericError: 'Ocorreu um erro. Tente novamente.',
+      tooManyAttempts: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
+      serverError: 'Erro no servidor. Tente novamente mais tarde.',
+      networkError: 'Erro de conexão. Verifique sua internet.',
     },
     forgotPassword: {
       title: 'Esqueci minha senha',

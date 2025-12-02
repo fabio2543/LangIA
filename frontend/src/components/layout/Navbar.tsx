@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../common/Button';
 import { useTranslation, LOCALE_FLAGS, LOCALE_LABELS } from '../../i18n';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import type { Locale } from '../../types';
 
 const LOCALES: Locale[] = ['pt', 'en', 'es'];

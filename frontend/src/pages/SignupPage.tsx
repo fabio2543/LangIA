@@ -4,7 +4,7 @@ import { AuthLayout } from '../components/auth/AuthLayout';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { PasswordStrengthMeter } from '../components/common/PasswordStrengthMeter';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { usePasswordValidation } from '../hooks/usePasswordValidation';
 import { useTranslation } from '../i18n';
 import type { UserProfile } from '../types';

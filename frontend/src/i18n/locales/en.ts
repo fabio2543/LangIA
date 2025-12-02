@@ -154,6 +154,9 @@ export const en = {
       requiredField: 'Required field',
       termsRequired: 'You must accept the terms of use',
       genericError: 'An error occurred. Please try again.',
+      tooManyAttempts: 'Too many attempts. Please wait a few minutes and try again.',
+      serverError: 'Server error. Please try again later.',
+      networkError: 'Connection error. Please check your internet.',
     },
     forgotPassword: {
       title: 'Forgot my password',

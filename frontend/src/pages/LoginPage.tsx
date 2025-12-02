@@ -4,7 +4,7 @@ import axios, { type AxiosError } from 'axios';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../i18n';
 import type { PendingVerificationResponse } from '../types';
 
@@ -50,14 +50,12 @@ export const LoginPage = () => {
       await login({ email, password });
       navigate('/dashboard');
     } catch (error) {
-      // Verifica se é erro de e-mail não verificado (403)
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError<PendingVerificationResponse>;
-        if (
-          axiosError.response?.status === 403 &&
-          axiosError.response?.data?.emailVerificationRequired
-        ) {
-          // Redireciona para página de verificação de e-mail
+        const status = axiosError.response?.status;
+
+        // 403 - Email não verificado
+        if (status === 403 && axiosError.response?.data?.emailVerificationRequired) {
           navigate('/verify-email', {
             state: {
               userId: axiosError.response.data.userId,
@@ -66,8 +64,34 @@ export const LoginPage = () => {
           });
           return;
         }
+
+        // 401 - Credenciais inválidas
+        if (status === 401) {
+          setErrors({ general: t.auth.errors.invalidCredentials });
+          return;
+        }
+
+        // 429 - Muitas tentativas (rate limit)
+        if (status === 429) {
+          setErrors({ general: t.auth.errors.tooManyAttempts });
+          return;
+        }
+
+        // 5xx - Erro do servidor
+        if (status && status >= 500) {
+          setErrors({ general: t.auth.errors.serverError });
+          return;
+        }
+
+        // Erro de rede (sem resposta do servidor)
+        if (!axiosError.response) {
+          setErrors({ general: t.auth.errors.networkError });
+          return;
+        }
       }
-      setErrors({ general: t.auth.errors.invalidCredentials });
+
+      // Fallback para outros erros
+      setErrors({ general: t.auth.errors.genericError });
     }
   };
 
