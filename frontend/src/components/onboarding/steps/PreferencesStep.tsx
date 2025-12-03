@@ -123,7 +123,7 @@ export const PreferencesStep = () => {
   return (
     <div className="max-w-xl mx-auto">
       <div className="text-center mb-8">
-        <div className="text-6xl mb-4">{"\\u2699\\uFE0F"}</div>
+        <div className="text-6xl mb-4">⚙️</div>
         <h1 className="text-3xl font-serif italic text-text mb-2">
           Como voce gosta de aprender?
         </h1>

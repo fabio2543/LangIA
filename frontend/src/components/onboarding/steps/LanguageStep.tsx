@@ -120,7 +120,7 @@ export const LanguageStep = () => {
   return (
     <div className="max-w-xl mx-auto">
       <div className="text-center mb-8">
-        <div className="text-6xl mb-4">{"\\uD83C\\uDF0D"}</div>
+        <div className="text-6xl mb-4">🌍</div>
         <h1 className="text-3xl font-serif italic text-text mb-2">
           Qual idioma voce quer aprender?
         </h1>

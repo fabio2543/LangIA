@@ -31,7 +31,7 @@ export const CompletionStep = () => {
   if (success) {
     return (
       <div className="max-w-xl mx-auto text-center">
-        <div className="text-8xl mb-6 animate-bounce">{"\\uD83C\\uDF89"}</div>
+        <div className="text-8xl mb-6 animate-bounce">🎉</div>
         <h1 className="text-3xl font-serif italic text-text mb-4">
           Tudo pronto!
         </h1>
@@ -49,7 +49,7 @@ export const CompletionStep = () => {
   if (isGenerating) {
     return (
       <div className="max-w-xl mx-auto text-center">
-        <div className="text-8xl mb-6">{"\\uD83D\\uDE80"}</div>
+        <div className="text-8xl mb-6">🚀</div>
         <h1 className="text-3xl font-serif italic text-text mb-4">
           Gerando sua trilha...
         </h1>
@@ -67,7 +67,7 @@ export const CompletionStep = () => {
   return (
     <div className="max-w-xl mx-auto">
       <div className="text-center mb-8">
-        <div className="text-8xl mb-6">{"\\uD83C\\uDFAF"}</div>
+        <div className="text-8xl mb-6">🎯</div>
         <h1 className="text-3xl font-serif italic text-text mb-4">
           Pronto para comecar!
         </h1>

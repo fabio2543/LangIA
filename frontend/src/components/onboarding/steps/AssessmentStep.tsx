@@ -124,7 +124,7 @@ export const AssessmentStep = () => {
   if (enrolledLanguages.length === 0) {
     return (
       <div className="max-w-xl mx-auto text-center">
-        <div className="text-6xl mb-4">{"\\u26A0\\uFE0F"}</div>
+        <div className="text-6xl mb-4">⚠️</div>
         <h1 className="text-2xl font-serif italic text-text mb-4">
           Nenhum idioma selecionado
         </h1>
@@ -141,7 +141,7 @@ export const AssessmentStep = () => {
   return (
     <div className="max-w-xl mx-auto">
       <div className="text-center mb-8">
-        <div className="text-6xl mb-4">{"\\uD83D\\uDCDD"}</div>
+        <div className="text-6xl mb-4">📝</div>
         <h1 className="text-3xl font-serif italic text-text mb-2">
           Autoavaliacao: {currentLanguage?.languageNamePt}
         </h1>

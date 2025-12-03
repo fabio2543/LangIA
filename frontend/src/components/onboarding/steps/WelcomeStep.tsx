@@ -77,7 +77,7 @@ export const WelcomeStep = () => {
   return (
     <div className="max-w-xl mx-auto">
       <div className="text-center mb-8">
-        <div className="text-6xl mb-4">{"\\uD83D\\uDC4B"}</div>
+        <div className="text-6xl mb-4">👋</div>
         <h1 className="text-3xl font-serif italic text-text mb-2">
           Bem-vindo ao LangIA!
         </h1>
