@@ -118,6 +118,7 @@ public class AuthenticationService {
                 .profile(user.getProfileCode())
                 .permissions(permissions)
                 .expiresIn(jwtExpiration)
+                .onboardingCompleted(user.isOnboardingCompleted())
                 .build();
     }
 

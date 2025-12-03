@@ -39,6 +39,9 @@ public class Language {
     @Column(name = "name_es", length = 100)
     private String nameEs;
 
+    @Column(name = "name_native", length = 100)
+    private String nameNative;
+
     @Column(name = "active", nullable = false)
     @Builder.Default
     private boolean active = true;

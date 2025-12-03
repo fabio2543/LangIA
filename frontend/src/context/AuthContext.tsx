@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: validation.session.email,
             profile: validation.session.profile,
             permissions: validation.session.permissions,
+            onboardingCompleted: validation.session.onboardingCompleted ?? false,
           };
           localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
           setUser(authUser);
@@ -70,10 +71,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email: response.email,
       profile: response.profile,
       permissions: response.permissions,
+      onboardingCompleted: response.onboardingCompleted ?? false,
     };
 
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
     setUser(authUser);
+  };
+
+  // Atualiza flag de onboarding
+  const updateOnboardingCompleted = (completed: boolean) => {
+    if (user) {
+      const updatedUser = { ...user, onboardingCompleted: completed };
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+      setUser(updatedUser);
+    }
   };
 
   // Limpa dados locais (cookie é limpo pelo backend no logout)
@@ -144,6 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         error,
         clearError,
+        updateOnboardingCompleted,
       }}
     >
       {children}

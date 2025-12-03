@@ -1,5 +1,8 @@
 export type Locale = 'pt' | 'en' | 'es';
 
+// Re-export Trail types
+export * from './trail';
+
 export interface Teacher {
   id: string;
   name: string;
@@ -81,6 +84,7 @@ export interface LoginResponse {
   profile: UserProfile;
   permissions: string[];
   expiresIn: number;
+  onboardingCompleted: boolean;
 }
 
 export interface RegisterRequest {
@@ -107,6 +111,7 @@ export interface AuthUser {
   email: string;
   profile: UserProfile;
   permissions: string[];
+  onboardingCompleted: boolean;
 }
 
 export interface AuthState {
@@ -321,4 +326,31 @@ export interface NotificationSettings {
   preferredTimeEnd?: string;
   quietModeStart?: string;
   quietModeEnd?: string;
+}
+
+// ============================================
+// Onboarding Types
+// ============================================
+
+export type OnboardingStep = 'welcome' | 'language' | 'preferences' | 'assessment' | 'complete';
+
+export interface OnboardingStepsStatus {
+  profileComplete: boolean;
+  languageEnrolled: boolean;
+  preferencesSet: boolean;
+  assessmentDone: boolean;
+}
+
+export interface OnboardingStatus {
+  completed: boolean;
+  steps: OnboardingStepsStatus;
+  nextStep: OnboardingStep | null;
+}
+
+export interface OnboardingCompleteResponse {
+  success: boolean;
+  message: string;
+  trailId?: string;
+  languageCode?: string;
+  redirectUrl?: string;
 }

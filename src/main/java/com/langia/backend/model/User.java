@@ -91,6 +91,21 @@ public class User {
     @Column(name = "email_verified_at")
     private LocalDateTime emailVerifiedAt;
 
+    /**
+     * Indica se o usuário completou o processo de onboarding inicial.
+     * O onboarding inclui: seleção de idioma, preferências e autoavaliação.
+     */
+    @Column(name = "onboarding_completed", nullable = false)
+    @Builder.Default
+    private boolean onboardingCompleted = false;
+
+    /**
+     * Data/hora em que o onboarding foi completado.
+     * Null se ainda não foi completado.
+     */
+    @Column(name = "onboarding_completed_at")
+    private LocalDateTime onboardingCompletedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

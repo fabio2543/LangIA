@@ -54,4 +54,9 @@ public class LoginResponseDTO {
      * Tempo em milissegundos até a expiração do token.
      */
     private Long expiresIn;
+
+    /**
+     * Indica se o usuário completou o processo de onboarding.
+     */
+    private Boolean onboardingCompleted;
 }

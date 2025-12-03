@@ -70,7 +70,8 @@ class LoginResponseDTOTest {
                 "admin@example.com",
                 UserProfile.ADMIN,
                 permissions,
-                3600000L
+                3600000L,
+                true // onboardingCompleted
         );
 
         // Then
@@ -81,6 +82,7 @@ class LoginResponseDTOTest {
         assertEquals(UserProfile.ADMIN, response.getProfile());
         assertEquals(permissions, response.getPermissions());
         assertEquals(3600000L, response.getExpiresIn());
+        assertEquals(true, response.getOnboardingCompleted());
     }
 
     @Test

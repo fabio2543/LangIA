@@ -11,6 +11,7 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   error: ApiError | null;
   clearError: () => void;
+  updateOnboardingCompleted: (completed: boolean) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

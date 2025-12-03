@@ -190,6 +190,58 @@ public class GlobalExceptionHandler {
                 .body(ResendVerificationResponseDTO.rateLimited(ex.getRetryAfterSeconds()));
     }
 
+    // ========== Exceções de Trilhas ==========
+
+    /**
+     * Trata exceção de trilha não encontrada.
+     */
+    @ExceptionHandler(TrailNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTrailNotFound(TrailNotFoundException ex) {
+        log.warn("Trilha não encontrada: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    /**
+     * Trata exceção de módulo não encontrado.
+     */
+    @ExceptionHandler(ModuleNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleModuleNotFound(ModuleNotFoundException ex) {
+        log.warn("Módulo não encontrado: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    /**
+     * Trata exceção de lição não encontrada.
+     */
+    @ExceptionHandler(LessonNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleLessonNotFound(LessonNotFoundException ex) {
+        log.warn("Lição não encontrada: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    /**
+     * Trata exceção de limite de trilhas excedido.
+     */
+    @ExceptionHandler(TrailLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleTrailLimitExceeded(TrailLimitExceededException ex) {
+        log.warn("Limite de trilhas excedido: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(ex.getMessage()));
+    }
+
+    /**
+     * Trata exceção de erro na geração de trilha.
+     */
+    @ExceptionHandler(TrailGenerationException.class)
+    public ResponseEntity<ErrorResponse> handleTrailGenerationError(TrailGenerationException ex) {
+        log.error("Erro na geração de trilha: {}", ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Erro ao gerar trilha. Tente novamente mais tarde."));
+    }
+
     // ========== Exceções de Negócio ==========
 
     /**

@@ -5,8 +5,10 @@
 - Redis 7
 - RabbitMQ 3
 - Docker
+- pgvector
 
 ## Arquitetura
+
 
 3 microserviços independentes:
 
@@ -158,6 +160,7 @@ Ao sugerir código:
 - SEMPRE tratar exceções
 - SEMPRE usar @Value para configs
 - Código e comentários em português
+- SEMPRE modelar as tabelas no padrao em ingles.
 
 ## Integrações
 

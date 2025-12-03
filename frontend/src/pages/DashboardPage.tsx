@@ -16,6 +16,13 @@ export const DashboardPage = () => {
     }
   }, [user, isLoading, navigate]);
 
+  // Redireciona para onboarding se não completou
+  useEffect(() => {
+    if (user && !user.onboardingCompleted && !isLoading) {
+      navigate('/onboarding');
+    }
+  }, [user, isLoading, navigate]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
@@ -141,13 +148,18 @@ export const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Coming Soon Section */}
+        {/* Learning Trails Section */}
         <div className="bg-gradient-to-br from-primary to-primary-dark rounded-3xl shadow-card p-8 text-white text-center">
-          <div className="text-6xl mb-4">🚀</div>
-          <h2 className="text-2xl font-serif italic mb-2">{t.dashboard.comingSoon}</h2>
-          <p className="text-white/80 max-w-md mx-auto">
-            {t.dashboard.comingSoonDesc}
+          <div className="text-6xl mb-4">🎯</div>
+          <h2 className="text-2xl font-serif italic mb-2">Trilhas de Aprendizado</h2>
+          <p className="text-white/80 max-w-md mx-auto mb-6">
+            Acesse suas trilhas personalizadas e continue sua jornada de aprendizado de idiomas.
           </p>
+          <Link to="/trails">
+            <Button variant="secondary" size="lg">
+              Ver Minhas Trilhas
+            </Button>
+          </Link>
         </div>
       </main>
     </div>
