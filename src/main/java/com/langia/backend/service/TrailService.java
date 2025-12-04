@@ -40,6 +40,7 @@ import com.langia.backend.model.TrailStatus;
 import com.langia.backend.model.User;
 import com.langia.backend.repository.LanguageRepository;
 import com.langia.backend.repository.LessonRepository;
+import com.langia.backend.repository.StudentLanguageEnrollmentRepository;
 import com.langia.backend.repository.TrailModuleRepository;
 import com.langia.backend.repository.TrailRepository;
 import com.langia.backend.repository.UserRepository;
@@ -64,6 +65,7 @@ public class TrailService {
     private final LessonRepository lessonRepository;
     private final LanguageRepository languageRepository;
     private final UserRepository userRepository;
+    private final StudentLanguageEnrollmentRepository enrollmentRepository;
 
     private final TrailMapper trailMapper;
     private final TrailHashService trailHashService;
@@ -149,9 +151,16 @@ public class TrailService {
         Language language = languageRepository.findById(languageCode)
                 .orElseThrow(() -> new RuntimeException("Idioma não encontrado: " + languageCode));
 
-        // Determinar nível inicial (A1 por padrão, ou baseado em assessment)
-        Level level = curriculumService.getLevelEntityByCode("A1")
-                .orElseThrow(() -> new RuntimeException("Nível A1 não encontrado"));
+        // Determinar nível baseado no enrollment do estudante (A1 como fallback)
+        String levelCode = enrollmentRepository.findByUserIdAndLanguageCode(studentId, languageCode)
+                .map(enrollment -> enrollment.getCefrLevel() != null ? enrollment.getCefrLevel() : "A1")
+                .orElse("A1");
+
+        Level level = curriculumService.getLevelEntityByCode(levelCode)
+                .orElseThrow(() -> new RuntimeException("Nível " + levelCode + " não encontrado"));
+
+        log.info("Nível determinado para trilha: {} (estudante: {}, idioma: {})",
+                levelCode, studentId, languageCode);
 
         // Calcular hash para cache
         String curriculumVersion = curriculumService.getCurrentCurriculumVersion();
