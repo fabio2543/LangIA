@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useOnboarding } from '../../../context/OnboardingContext';
+import { useState } from 'react';
+import { useOnboarding } from '../../../hooks/useOnboarding';
 import { Button } from '../../common/Button';
 
 export const CompletionStep = () => {

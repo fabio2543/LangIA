@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useOnboarding } from '../../../context/OnboardingContext';
+import { useOnboarding } from '../../../hooks/useOnboarding';
 import { profileService } from '../../../services/profileService';
 import { Button } from '../../common/Button';
-import type { UserProfileDetails, UpdatePersonalDataRequest } from '../../../types';
+import type { UpdatePersonalDataRequest } from '../../../types';
 
 const NATIVE_LANGUAGE_OPTIONS = [
   { value: 'pt-BR', label: 'Português (Brasil)', flag: '🇧🇷' },
@@ -12,7 +12,6 @@ const NATIVE_LANGUAGE_OPTIONS = [
 
 export const WelcomeStep = () => {
   const { nextStep, isLoading: contextLoading } = useOnboarding();
-  const [profile, setProfile] = useState<UserProfileDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +26,6 @@ export const WelcomeStep = () => {
     const loadProfile = async () => {
       try {
         const data = await profileService.getProfileDetails();
-        setProfile(data);
         setFormData({
           fullName: data.fullName || '',
           nativeLanguage: data.nativeLanguage || 'pt-BR',

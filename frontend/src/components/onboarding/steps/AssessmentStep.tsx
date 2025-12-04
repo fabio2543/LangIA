@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useOnboarding } from '../../../context/OnboardingContext';
+import { useOnboarding } from '../../../hooks/useOnboarding';
 import { languageService, skillAssessmentService } from '../../../services/profileService';
 import { Button } from '../../common/Button';
 import type { SkillAssessment, DifficultyLevel, CefrLevel, LanguageEnrollment } from '../../../types';

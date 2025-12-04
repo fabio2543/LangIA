@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useOnboarding } from '../../../context/OnboardingContext';
+import { useOnboarding } from '../../../hooks/useOnboarding';
 import { languageService } from '../../../services/profileService';
 import { Button } from '../../common/Button';
-import type { Language, LanguageEnrollment, CefrLevel } from '../../../types';
+import type { Language, CefrLevel } from '../../../types';
 
 // Idiomas disponíveis por enquanto (Inglês e Espanhol)
 const ALLOWED_LANGUAGES = ['en', 'es'];

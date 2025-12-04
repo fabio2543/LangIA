@@ -1,22 +1,9 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { onboardingService } from '../services/onboardingService';
+import { OnboardingContext } from './OnboardingContextDef';
 import type { OnboardingStatus, OnboardingStep, OnboardingCompleteResponse } from '../types';
-
-interface OnboardingContextType {
-  status: OnboardingStatus | null;
-  currentStep: OnboardingStep;
-  isLoading: boolean;
-  error: string | null;
-  loadStatus: () => Promise<void>;
-  goToStep: (step: OnboardingStep) => void;
-  nextStep: () => void;
-  prevStep: () => void;
-  completeOnboarding: () => Promise<OnboardingCompleteResponse>;
-}
-
-const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
 const STEPS_ORDER: OnboardingStep[] = ['welcome', 'language', 'preferences', 'assessment', 'complete'];
 
@@ -121,12 +108,4 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </OnboardingContext.Provider>
   );
-};
-
-export const useOnboarding = () => {
-  const context = useContext(OnboardingContext);
-  if (context === undefined) {
-    throw new Error('useOnboarding must be used within an OnboardingProvider');
-  }
-  return context;
 };

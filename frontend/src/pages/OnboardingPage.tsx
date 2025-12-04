@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { OnboardingProvider, useOnboarding } from '../context/OnboardingContext';
+import { OnboardingProvider } from '../context/OnboardingContext';
+import { useOnboarding } from '../hooks/useOnboarding';
 import { OnboardingStepper } from '../components/onboarding';
 import { useAuth } from '../hooks/useAuth';
 
@@ -8,7 +9,7 @@ const OnboardingContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { currentStep, goToStep, isLoading, status } = useOnboarding();
+  const { currentStep, goToStep, isLoading } = useOnboarding();
 
   // Se ja completou onboarding, redireciona
   useEffect(() => {

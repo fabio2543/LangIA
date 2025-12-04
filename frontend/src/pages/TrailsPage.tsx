@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useTrail } from '../context/TrailContext';
+import { useTrail } from '../hooks/useTrail';
 import { TrailCard, TrailGenerating } from '../components/trail';
 import { Button } from '../components/common/Button';
 

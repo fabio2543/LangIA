@@ -100,6 +100,8 @@ export const trailService = {
 
   /**
    * Busca próxima lição não completada.
+   * Retorna null apenas se 204 No Content (todas completadas).
+   * Propaga outros erros para tratamento adequado.
    */
   getNextLesson: async (trailId: string): Promise<Lesson | null> => {
     try {
@@ -107,7 +109,14 @@ export const trailService = {
       return response.data;
     } catch (error) {
       // 204 No Content = todas as lições completadas
-      return null;
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 204) {
+          return null;
+        }
+      }
+      // Propaga outros erros (rede, 500, etc.)
+      throw error;
     }
   },
 

@@ -1,9 +1,10 @@
 import {
   createContext,
-  useContext,
   useState,
   useCallback,
   useMemo,
+  useRef,
+  useEffect,
   type ReactNode,
 } from 'react';
 import { trailService, subscribeToGenerationStatus } from '../services/trailService';
@@ -70,7 +71,7 @@ interface TrailContextActions {
   setCurrentLesson: (lesson: Lesson | null) => void;
 }
 
-type TrailContextValue = TrailContextState & TrailContextActions;
+export type TrailContextValue = TrailContextState & TrailContextActions;
 
 // ============================================
 // Context Creation
@@ -97,6 +98,24 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Ref para armazenar função de cleanup da assinatura SSE
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  // Cleanup SSE ao desmontar ou trocar de trilha
+  const cleanupSubscription = useCallback(() => {
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+  }, []);
+
+  // Cleanup ao desmontar o provider
+  useEffect(() => {
+    return () => {
+      cleanupSubscription();
+    };
+  }, [cleanupSubscription]);
+
   // Utilitários
   const clearError = useCallback(() => setError(null), []);
 
@@ -115,44 +134,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
     }
   }, []);
 
-  // Carregar trilha por idioma
-  const loadTrailByLanguage = useCallback(async (languageCode: string): Promise<Trail> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const trail = await trailService.getTrailByLanguage(languageCode);
-      setCurrentTrail(trail);
-
-      // Se a trilha está em geração, iniciar monitoramento
-      if (trail.status === 'GENERATING' || trail.status === 'PARTIAL') {
-        setIsGenerating(true);
-        subscribeToGenerationStatus(
-          trail.id,
-          (status) => {
-            setGenerationStatus(status as TrailGenerationStatus);
-            if ((status as TrailGenerationStatus).trailStatus === 'READY') {
-              setIsGenerating(false);
-              // Recarregar trilha completa
-              loadTrailById(trail.id);
-            }
-          },
-          () => {
-            setIsGenerating(false);
-          }
-        );
-      }
-
-      return trail;
-    } catch (err) {
-      setError('Erro ao carregar trilha');
-      console.error('Error loading trail by language:', err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Carregar trilha por ID
+  // Carregar trilha por ID (definido antes de loadTrailByLanguage para ser usado como dependência)
   const loadTrailById = useCallback(async (trailId: string): Promise<Trail> => {
     setIsLoading(true);
     setError(null);
@@ -169,28 +151,77 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
     }
   }, []);
 
+  // Carregar trilha por idioma
+  const loadTrailByLanguage = useCallback(async (languageCode: string): Promise<Trail> => {
+    setIsLoading(true);
+    setError(null);
+
+    // Limpa assinatura anterior antes de iniciar nova
+    cleanupSubscription();
+
+    try {
+      const trail = await trailService.getTrailByLanguage(languageCode);
+      setCurrentTrail(trail);
+
+      // Se a trilha está em geração, iniciar monitoramento
+      if (trail.status === 'GENERATING' || trail.status === 'PARTIAL') {
+        setIsGenerating(true);
+        unsubscribeRef.current = subscribeToGenerationStatus(
+          trail.id,
+          (status) => {
+            setGenerationStatus(status as TrailGenerationStatus);
+            if ((status as TrailGenerationStatus).trailStatus === 'READY') {
+              setIsGenerating(false);
+              cleanupSubscription();
+              // Recarregar trilha completa
+              loadTrailById(trail.id);
+            }
+          },
+          () => {
+            setIsGenerating(false);
+            cleanupSubscription();
+          }
+        );
+      }
+
+      return trail;
+    } catch (err) {
+      setError('Erro ao carregar trilha');
+      console.error('Error loading trail by language:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [cleanupSubscription, loadTrailById]);
+
   // Gerar trilha
   const generateTrail = useCallback(async (request: GenerateTrailRequest): Promise<Trail> => {
     setIsLoading(true);
     setIsGenerating(true);
     setError(null);
+
+    // Limpa assinatura anterior antes de iniciar nova
+    cleanupSubscription();
+
     try {
       const trail = await trailService.generateTrail(request);
       setCurrentTrail(trail);
 
       // Monitorar geração
       if (trail.status === 'GENERATING' || trail.status === 'PARTIAL') {
-        subscribeToGenerationStatus(
+        unsubscribeRef.current = subscribeToGenerationStatus(
           trail.id,
           (status) => {
             setGenerationStatus(status as TrailGenerationStatus);
             if ((status as TrailGenerationStatus).trailStatus === 'READY') {
               setIsGenerating(false);
+              cleanupSubscription();
               loadTrailById(trail.id);
             }
           },
           () => {
             setIsGenerating(false);
+            cleanupSubscription();
           }
         );
       } else {
@@ -209,7 +240,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
     } finally {
       setIsLoading(false);
     }
-  }, [loadActiveTrails, loadTrailById]);
+  }, [loadActiveTrails, loadTrailById, cleanupSubscription]);
 
   // Refresh trilha
   const refreshTrail = useCallback(async (
@@ -415,18 +446,6 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       {children}
     </TrailContext.Provider>
   );
-};
-
-// ============================================
-// Custom Hook
-// ============================================
-
-export const useTrail = (): TrailContextValue => {
-  const context = useContext(TrailContext);
-  if (!context) {
-    throw new Error('useTrail must be used within a TrailProvider');
-  }
-  return context;
 };
 
 export default TrailContext;
