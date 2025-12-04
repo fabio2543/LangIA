@@ -1,5 +1,6 @@
 package com.langia.backend.util;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +11,8 @@ import javax.crypto.SecretKey;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import jakarta.annotation.PostConstruct;
 
 import com.langia.backend.model.User;
 import com.langia.backend.model.UserProfile;
@@ -31,11 +34,29 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtUtil {
 
+    private static final int MIN_SECRET_LENGTH_BYTES = 32; // 256 bits para HS256
+
     @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.expiration}")
     private Long expiration;
+
+    /**
+     * Valida o tamanho da chave secreta JWT na inicialização.
+     * JJWT requer pelo menos 256 bits (32 bytes) para HS256.
+     */
+    @PostConstruct
+    public void validateSecretKey() {
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < MIN_SECRET_LENGTH_BYTES) {
+            throw new IllegalStateException(
+                String.format("JWT secret deve ter pelo menos %d bytes (256 bits) para HS256. Tamanho atual: %d bytes",
+                    MIN_SECRET_LENGTH_BYTES, keyBytes.length)
+            );
+        }
+        log.info("Chave JWT validada: {} bytes", keyBytes.length);
+    }
 
     /**
      * Gera a chave secreta para assinatura dos tokens.

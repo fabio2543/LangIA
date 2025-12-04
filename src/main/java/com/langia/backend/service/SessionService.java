@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.langia.backend.dto.SessionData;
 import com.langia.backend.util.JwtUtil;
+import com.langia.backend.util.TokenHashUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,13 +38,26 @@ public class SessionService {
     private Long jwtExpirationMs;
 
     /**
-     * Gera a chave Redis para uma sessão baseada no token.
+     * Gera a chave Redis para uma sessão baseada no hash do token.
+     * Usar hash ao invés do token bruto reduz o risco em caso de vazamento do Redis,
+     * pois os hashes não podem ser usados para replay de autenticação.
      *
      * @param token token JWT
-     * @return chave formatada para Redis
+     * @return chave formatada para Redis com hash do token
      */
     private String getSessionKey(String token) {
-        return SESSION_PREFIX + token;
+        String tokenHash = TokenHashUtil.hashToken(token);
+        return SESSION_PREFIX + tokenHash;
+    }
+
+    /**
+     * Gera o hash de um token para armazenamento no índice de sessões.
+     *
+     * @param token token JWT
+     * @return hash SHA-256 do token
+     */
+    private String hashToken(String token) {
+        return TokenHashUtil.hashToken(token);
     }
 
     /**
@@ -55,6 +69,7 @@ public class SessionService {
     public void saveSession(String token, SessionData sessionData) {
         try {
             String key = getSessionKey(token);
+            String tokenHash = hashToken(token);
             sessionData.setCreatedAt(System.currentTimeMillis());
 
             // Usa o tempo de expiração configurado (mesmo do JWT)
@@ -65,15 +80,15 @@ public class SessionService {
                     TimeUnit.MILLISECONDS
             );
 
-            // Adiciona token ao índice de sessões do usuário
+            // Adiciona hash do token ao índice de sessões do usuário (nunca armazena token bruto)
             String userSessionsKey = USER_SESSIONS_PREFIX + sessionData.getUserId();
-            stringRedisTemplate.opsForSet().add(userSessionsKey, token);
+            stringRedisTemplate.opsForSet().add(userSessionsKey, tokenHash);
             stringRedisTemplate.expire(userSessionsKey, jwtExpirationMs, TimeUnit.MILLISECONDS);
 
             log.info("Sessão criada no Redis para usuário: {} (ID: {}) com TTL de {}ms",
                     sessionData.getEmail(), sessionData.getUserId(), jwtExpirationMs);
         } catch (Exception e) {
-            log.error("Erro ao salvar sessão no Redis para token: {}", token, e);
+            log.error("Erro ao salvar sessão no Redis", e);
             throw new RuntimeException("Falha ao criar sessão no Redis", e);
         }
     }
@@ -113,16 +128,17 @@ public class SessionService {
     public boolean removeSession(String token) {
         try {
             String key = getSessionKey(token);
+            String tokenHash = hashToken(token);
 
             // Recupera a sessão antes de remover para limpar o índice
             SessionData sessionData = sessionRedisTemplate.opsForValue().get(key);
 
             Boolean deleted = sessionRedisTemplate.delete(key);
 
-            // Remove do índice de sessões do usuário
+            // Remove hash do token do índice de sessões do usuário
             if (sessionData != null) {
                 String userSessionsKey = USER_SESSIONS_PREFIX + sessionData.getUserId();
-                stringRedisTemplate.opsForSet().remove(userSessionsKey, token);
+                stringRedisTemplate.opsForSet().remove(userSessionsKey, tokenHash);
             }
 
             if (Boolean.TRUE.equals(deleted)) {
@@ -220,6 +236,7 @@ public class SessionService {
      *
      * Usa índice auxiliar (user_sessions:userId) para performance O(1) ao invés de
      * scan O(N) no Redis, evitando operações custosas em produção.
+     * O índice armazena hashes dos tokens, que são usados diretamente como sufixo da chave de sessão.
      *
      * @param userId ID do usuário
      * @return número de sessões removidas
@@ -229,13 +246,14 @@ public class SessionService {
             log.info("Removendo todas as sessões do usuário: {}", userId);
             long removedCount = 0;
 
-            // Usa índice auxiliar para buscar tokens do usuário (O(1))
+            // Usa índice auxiliar para buscar hashes de tokens do usuário (O(1))
             String userSessionsKey = USER_SESSIONS_PREFIX + userId;
-            var tokens = stringRedisTemplate.opsForSet().members(userSessionsKey);
+            var tokenHashes = stringRedisTemplate.opsForSet().members(userSessionsKey);
 
-            if (tokens != null && !tokens.isEmpty()) {
-                for (String token : tokens) {
-                    String sessionKey = getSessionKey(token);
+            if (tokenHashes != null && !tokenHashes.isEmpty()) {
+                for (String tokenHash : tokenHashes) {
+                    // O índice agora armazena hashes, que são usados diretamente na chave
+                    String sessionKey = SESSION_PREFIX + tokenHash;
                     Boolean deleted = sessionRedisTemplate.delete(sessionKey);
                     if (Boolean.TRUE.equals(deleted)) {
                         removedCount++;

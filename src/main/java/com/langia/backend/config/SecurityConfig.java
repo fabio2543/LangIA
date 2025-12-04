@@ -27,7 +27,7 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler accessDeniedHandler;
 
     @Lazy
-    @Autowired(required = false)
+    @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
@@ -85,13 +85,11 @@ public class SecurityConfig {
                 .accessDeniedHandler(accessDeniedHandler)
             );
 
-        // Adiciona o filtro JWT antes do filtro padrão de autenticação, se disponível
-        if (jwtAuthenticationFilter != null) {
-            http.addFilterBefore(
-                jwtAuthenticationFilter,
-                UsernamePasswordAuthenticationFilter.class
-            );
-        }
+        // Adiciona o filtro JWT antes do filtro padrão de autenticação
+        http.addFilterBefore(
+            jwtAuthenticationFilter,
+            UsernamePasswordAuthenticationFilter.class
+        );
 
         return http.build();
     }
