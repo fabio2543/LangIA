@@ -220,6 +220,7 @@ public class StudentProfileService {
         prefs.setPreferredFormats(dto.getPreferredFormats() != null ? dto.getPreferredFormats() : new ArrayList<>());
         prefs.setFormatRanking(dto.getFormatRanking() != null ? dto.getFormatRanking() : new ArrayList<>());
         prefs.setPrimaryObjective(dto.getPrimaryObjective());
+        prefs.setSecondaryObjective(dto.getSecondaryObjective());
         prefs.setObjectiveDescription(dto.getObjectiveDescription());
         prefs.setObjectiveDeadline(dto.getObjectiveDeadline());
 
@@ -383,6 +384,7 @@ public class StudentProfileService {
                 .preferredFormats(prefs.getPreferredFormats() != null ? prefs.getPreferredFormats() : new ArrayList<>())
                 .formatRanking(prefs.getFormatRanking() != null ? prefs.getFormatRanking() : new ArrayList<>())
                 .primaryObjective(prefs.getPrimaryObjective())
+                .secondaryObjective(prefs.getSecondaryObjective())
                 .objectiveDescription(prefs.getObjectiveDescription())
                 .objectiveDeadline(prefs.getObjectiveDeadline())
                 .build();

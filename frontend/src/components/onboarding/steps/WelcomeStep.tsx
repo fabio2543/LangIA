@@ -4,6 +4,12 @@ import { profileService } from '../../../services/profileService';
 import { Button } from '../../common/Button';
 import type { UserProfileDetails, UpdatePersonalDataRequest } from '../../../types';
 
+const NATIVE_LANGUAGE_OPTIONS = [
+  { value: 'pt-BR', label: 'Português (Brasil)', flag: '🇧🇷' },
+  { value: 'en-US', label: 'English (US)', flag: '🇺🇸' },
+  { value: 'es-ES', label: 'Español', flag: '🇪🇸' },
+];
+
 export const WelcomeStep = () => {
   const { nextStep, isLoading: contextLoading } = useOnboarding();
   const [profile, setProfile] = useState<UserProfileDetails | null>(null);
@@ -108,20 +114,28 @@ export const WelcomeStep = () => {
         </div>
 
         <div>
-          <label htmlFor="nativeLanguage" className="block text-sm font-medium text-text mb-2">
-            Qual e seu idioma nativo?
+          <label className="block text-sm font-medium text-text mb-3">
+            Qual é seu idioma nativo?
           </label>
-          <select
-            id="nativeLanguage"
-            value={formData.nativeLanguage}
-            onChange={(e) => setFormData({ ...formData, nativeLanguage: e.target.value })}
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
-          >
-            <option value="pt-BR">Portugues (Brasil)</option>
-            <option value="pt-PT">Portugues (Portugal)</option>
-            <option value="en-US">English (US)</option>
-            <option value="es-ES">Espanol</option>
-          </select>
+          <div className="grid grid-cols-3 gap-3">
+            {NATIVE_LANGUAGE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setFormData({ ...formData, nativeLanguage: option.value })}
+                className={`
+                  flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all
+                  ${formData.nativeLanguage === option.value
+                    ? 'border-accent bg-accent/10 text-accent'
+                    : 'border-gray-200 bg-white hover:border-gray-300 text-text'
+                  }
+                `}
+              >
+                <span className="text-2xl">{option.flag}</span>
+                <span className="text-sm font-medium text-center leading-tight">{option.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div>

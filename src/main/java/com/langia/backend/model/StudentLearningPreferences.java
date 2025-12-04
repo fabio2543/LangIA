@@ -92,6 +92,10 @@ public class StudentLearningPreferences {
     @Column(name = "primary_objective")
     private LearningObjective primaryObjective;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "secondary_objective")
+    private LearningObjective secondaryObjective;
+
     @Column(name = "objective_description", length = 500)
     private String objectiveDescription;
 

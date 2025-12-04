@@ -9,10 +9,16 @@ export const CompletionStep = () => {
   const [success, setSuccess] = useState(false);
 
   const handleComplete = async () => {
+    console.log('[CompletionStep] handleComplete called');
+    console.log('[CompletionStep] status:', status);
+    console.log('[CompletionStep] isGenerating:', isGenerating);
+    console.log('[CompletionStep] contextLoading:', contextLoading);
     try {
       setIsGenerating(true);
       setError(null);
+      console.log('[CompletionStep] Calling completeOnboarding...');
       const response = await completeOnboarding();
+      console.log('[CompletionStep] Response:', response);
 
       if (response.success) {
         setSuccess(true);
@@ -145,6 +151,14 @@ export const CompletionStep = () => {
         </div>
       </div>
 
+      {/* Debug info */}
+      <div className="text-xs text-gray-400 mb-2">
+        [DEBUG] languageEnrolled: {String(status?.steps?.languageEnrolled)},
+        contextLoading: {String(contextLoading)},
+        isGenerating: {String(isGenerating)},
+        disabled: {String(!status?.steps?.languageEnrolled || contextLoading || isGenerating)}
+      </div>
+
       {/* Botoes */}
       <div className="flex gap-4">
         <Button
@@ -161,7 +175,7 @@ export const CompletionStep = () => {
           variant="primary"
           onClick={handleComplete}
           className="flex-1"
-          disabled={!status?.steps.languageEnrolled || contextLoading || isGenerating}
+          disabled={!status?.steps?.languageEnrolled || contextLoading || isGenerating}
         >
           Gerar minha trilha
         </Button>

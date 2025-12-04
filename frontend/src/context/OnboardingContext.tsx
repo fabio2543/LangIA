@@ -73,10 +73,13 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   }, [currentStep, goToStep]);
 
   const completeOnboarding = useCallback(async (): Promise<OnboardingCompleteResponse> => {
+    console.log('[OnboardingContext] completeOnboarding called');
     try {
       setIsLoading(true);
       setError(null);
+      console.log('[OnboardingContext] Calling onboardingService.complete...');
       const response = await onboardingService.complete();
+      console.log('[OnboardingContext] Response:', response);
 
       if (response.success) {
         // Atualiza o contexto de auth

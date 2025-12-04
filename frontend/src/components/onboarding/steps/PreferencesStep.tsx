@@ -44,7 +44,9 @@ export const PreferencesStep = () => {
     preferredFormats: [],
     primaryObjective: undefined,
     topicsOfInterest: [],
+    objectiveDescription: '',
   });
+  const [selectedObjectives, setSelectedObjectives] = useState<LearningObjective[]>([]);
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -56,7 +58,17 @@ export const PreferencesStep = () => {
             preferredFormats: prefs.preferredFormats || [],
             primaryObjective: prefs.primaryObjective,
             topicsOfInterest: prefs.topicsOfInterest || [],
+            objectiveDescription: prefs.objectiveDescription || '',
           });
+          // Carrega objetivos existentes
+          const existingObjectives: LearningObjective[] = [];
+          if (prefs.primaryObjective) {
+            existingObjectives.push(prefs.primaryObjective);
+          }
+          if (prefs.secondaryObjective) {
+            existingObjectives.push(prefs.secondaryObjective);
+          }
+          setSelectedObjectives(existingObjectives);
         }
       } catch (err) {
         console.error('Erro ao carregar preferencias:', err);
@@ -83,6 +95,14 @@ export const PreferencesStep = () => {
     }
   };
 
+  const toggleObjective = (objective: LearningObjective) => {
+    if (selectedObjectives.includes(objective)) {
+      setSelectedObjectives(selectedObjectives.filter((o) => o !== objective));
+    } else if (selectedObjectives.length < 2) {
+      setSelectedObjectives([...selectedObjectives, objective]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -92,7 +112,9 @@ export const PreferencesStep = () => {
       await learningPreferencesService.updateLearningPreferences({
         dailyTimeAvailable: formData.dailyTimeAvailable || null,
         preferredFormats: formData.preferredFormats || [],
-        primaryObjective: formData.primaryObjective,
+        primaryObjective: selectedObjectives[0] || undefined,
+        secondaryObjective: selectedObjectives[1] || undefined,
+        objectiveDescription: formData.objectiveDescription || undefined,
         topicsOfInterest: formData.topicsOfInterest || [],
         preferredDays: [],
       });
@@ -197,27 +219,72 @@ export const PreferencesStep = () => {
         {/* Objetivo */}
         <div className="bg-white rounded-2xl shadow-card p-6">
           <h2 className="text-lg font-semibold text-text mb-4">
-            Qual seu principal objetivo?
+            Quais seus objetivos?
           </h2>
+          <p className="text-sm text-text-light mb-4">
+            Selecione até 2 objetivos
+          </p>
           <div className="space-y-2">
-            {OBJECTIVE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setFormData({ ...formData, primaryObjective: option.value })}
-                className={`
-                  w-full py-3 px-4 rounded-xl text-sm font-medium transition-all text-left
-                  ${
-                    formData.primaryObjective === option.value
-                      ? 'bg-accent text-white'
-                      : 'bg-bg text-text hover:bg-gray-100'
-                  }
-                `}
-              >
-                {option.label}
-              </button>
-            ))}
+            {OBJECTIVE_OPTIONS.map((option) => {
+              const isSelected = selectedObjectives.includes(option.value);
+              const isFirst = selectedObjectives[0] === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => toggleObjective(option.value)}
+                  className={`
+                    w-full py-3 px-4 rounded-xl text-sm font-medium transition-all text-left flex items-center justify-between
+                    ${
+                      isSelected
+                        ? 'bg-accent text-white'
+                        : 'bg-bg text-text hover:bg-gray-100'
+                    }
+                  `}
+                >
+                  <span>{option.label}</span>
+                  {isFirst && (
+                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                      Principal
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
+          {selectedObjectives.length === 2 && (
+            <p className="text-xs text-text-light mt-3 text-center">
+              Máximo de 2 objetivos selecionados
+            </p>
+          )}
+
+          {/* Campo de detalhamento - aparece quando há objetivo selecionado */}
+          {selectedObjectives.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="flex items-start gap-2 mb-3">
+                <span className="text-lg">✨</span>
+                <div>
+                  <h3 className="text-sm font-semibold text-text">
+                    Conte mais sobre seus objetivos
+                  </h3>
+                  <p className="text-xs text-accent font-medium">
+                    Super importante para personalizar sua trilha!
+                  </p>
+                </div>
+              </div>
+              <textarea
+                value={formData.objectiveDescription || ''}
+                onChange={(e) => setFormData({ ...formData, objectiveDescription: e.target.value })}
+                placeholder="Ex: Preciso de ingles para uma entrevista de emprego em uma multinacional daqui a 3 meses. Quero focar em vocabulario de negocios e melhorar minha fluencia em reunioes..."
+                className="w-full p-4 rounded-xl bg-bg border-2 border-transparent focus:border-accent focus:outline-none text-sm text-text placeholder:text-text-light/60 resize-none transition-colors"
+                rows={4}
+                maxLength={500}
+              />
+              <p className="text-xs text-text-light mt-2 text-right">
+                {formData.objectiveDescription?.length || 0}/500 caracteres
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Navegacao */}

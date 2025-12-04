@@ -289,6 +289,7 @@ export interface LearningPreferences {
   preferredFormats: LearningFormat[];
   formatRanking?: LearningFormat[];
   primaryObjective?: LearningObjective;
+  secondaryObjective?: LearningObjective;
   objectiveDescription?: string;
   objectiveDeadline?: string;
 }

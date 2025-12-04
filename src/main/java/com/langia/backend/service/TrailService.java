@@ -70,6 +70,7 @@ public class TrailService {
     private final TrailProgressService trailProgressService;
     private final CurriculumService curriculumService;
     private final BlueprintService blueprintService;
+    private final TrailGenerationAIService trailGenerationAIService;
 
     // ========== BUSCA DE TRILHAS ==========
 
@@ -536,21 +537,40 @@ public class TrailService {
     }
 
     /**
-     * Simula conclusão da geração de trilha.
-     * Em produção, isso seria feito pelo TrailGenerationConsumer via RabbitMQ.
+     * Completa a geração de trilha usando IA para personalizar o conteúdo.
+     * Utiliza as preferências e assessment do estudante para gerar conteúdo relevante.
      */
     private void completeTrailGeneration(UUID trailId) {
-        log.info("Simulando conclusão da geração da trilha: {}", trailId);
+        log.info("Gerando trilha personalizada com IA: {}", trailId);
 
         Trail trail = trailRepository.findById(trailId)
                 .orElseThrow(() -> new TrailGenerationException("Trilha não encontrada: " + trailId));
 
-        // Atualizar lições para não serem mais placeholders
+        UUID studentId = trail.getStudent().getId();
+        String languageCode = trail.getLanguage().getCode();
+        String levelCode = trail.getLevel().getCode();
+
+        // Gerar conteúdo personalizado para cada lição usando IA
         List<Lesson> lessons = lessonRepository.findByTrailIdOrdered(trailId);
         for (Lesson lesson : lessons) {
             lesson.setIsPlaceholder(false);
-            // Em produção, aqui o conteúdo seria gerado pelo LLM
-            lesson.setContent("{\"type\":\"" + lesson.getType().name() + "\",\"generated\":true}");
+
+            try {
+                // Gerar conteúdo da lição com IA
+                String generatedContent = trailGenerationAIService.generateLessonContent(
+                        lesson.getTitle(),
+                        lesson.getType().name(),
+                        studentId,
+                        languageCode,
+                        levelCode
+                );
+                lesson.setContent(generatedContent);
+                log.debug("Conteúdo gerado para lição: {}", lesson.getTitle());
+            } catch (Exception e) {
+                log.warn("Erro ao gerar conteúdo da lição {}: {}. Usando conteúdo padrão.",
+                        lesson.getTitle(), e.getMessage());
+                lesson.setContent("{\"type\":\"" + lesson.getType().name() + "\",\"generated\":false}");
+            }
         }
         lessonRepository.saveAll(lessons);
 
@@ -575,7 +595,7 @@ public class TrailService {
         // Atualizar progresso
         trailProgressService.updateTotalLessons(trailId);
 
-        log.info("Trilha {} gerada com sucesso - {} módulos, {} lições, {}h estimadas",
+        log.info("Trilha {} gerada com IA - {} módulos, {} lições, {}h estimadas",
                 trailId, modules.size(), lessons.size(), hours);
     }
 }

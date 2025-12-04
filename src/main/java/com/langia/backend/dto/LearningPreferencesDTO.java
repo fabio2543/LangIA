@@ -47,6 +47,8 @@ public class LearningPreferencesDTO {
     // Objectives
     private LearningObjective primaryObjective;
 
+    private LearningObjective secondaryObjective;
+
     @Size(max = 500, message = "Description must be at most 500 characters")
     private String objectiveDescription;
 

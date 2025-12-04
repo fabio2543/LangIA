@@ -9,7 +9,7 @@ export const onboardingService = {
    * Obtém o status atual do onboarding do usuário.
    */
   getStatus: async (): Promise<OnboardingStatus> => {
-    const response = await api.get<OnboardingStatus>('/api/onboarding/status');
+    const response = await api.get<OnboardingStatus>('/onboarding/status');
     return response.data;
   },
 
@@ -18,15 +18,22 @@ export const onboardingService = {
    * Gera automaticamente a trilha para o idioma primário.
    */
   complete: async (): Promise<OnboardingCompleteResponse> => {
-    const response = await api.post<OnboardingCompleteResponse>('/api/onboarding/complete');
-    return response.data;
+    console.log('[onboardingService] complete() called');
+    try {
+      const response = await api.post<OnboardingCompleteResponse>('/onboarding/complete');
+      console.log('[onboardingService] complete() response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[onboardingService] complete() error:', error);
+      throw error;
+    }
   },
 
   /**
    * Verifica se o usuário precisa completar o onboarding.
    */
   needsOnboarding: async (): Promise<boolean> => {
-    const response = await api.get<boolean>('/api/onboarding/needs');
+    const response = await api.get<boolean>('/onboarding/needs');
     return response.data;
   },
 };
