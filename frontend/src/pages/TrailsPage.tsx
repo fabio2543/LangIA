@@ -1,21 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTrail } from '../hooks/useTrail';
 import { TrailCard, TrailGenerating } from '../components/trail';
 import { Button } from '../components/common/Button';
-
-const AVAILABLE_LANGUAGES = [
-  { code: 'en', name: 'Inglês', flag: '🇺🇸' },
-  { code: 'es', name: 'Espanhol', flag: '🇪🇸' },
-  { code: 'fr', name: 'Francês', flag: '🇫🇷' },
-  { code: 'de', name: 'Alemão', flag: '🇩🇪' },
-  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
-  { code: 'pt', name: 'Português', flag: '🇧🇷' },
-  { code: 'ja', name: 'Japonês', flag: '🇯🇵' },
-  { code: 'ko', name: 'Coreano', flag: '🇰🇷' },
-  { code: 'zh', name: 'Chinês', flag: '🇨🇳' },
-];
+import { languageService } from '../services/trailService';
+import type { LanguageEnrollment } from '../types/trail';
 
 /**
  * Página de listagem de trilhas ativas do estudante.
@@ -33,10 +23,28 @@ export const TrailsPage = () => {
     archiveTrail,
   } = useTrail();
 
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [enrolledLanguages, setEnrolledLanguages] = useState<LanguageEnrollment[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState('');
   const [isGeneratingNew, setIsGeneratingNew] = useState(false);
 
-  const handleRegenerate = async (trailId: string, languageCode: string) => {
+  // Carrega idiomas inscritos do usuário
+  const loadEnrolledLanguages = useCallback(async () => {
+    try {
+      const enrollments = await languageService.getEnrollments();
+      setEnrolledLanguages(enrollments);
+      // Define o primeiro idioma disponível como selecionado
+      const availableForTrail = enrollments.filter(
+        (e) => !activeTrails.some((t) => t.languageCode === e.languageCode)
+      );
+      if (availableForTrail.length > 0 && !selectedLanguage) {
+        setSelectedLanguage(availableForTrail[0].languageCode);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar idiomas:', err);
+    }
+  }, [activeTrails, selectedLanguage]);
+
+  const handleRegenerate = async (_trailId: string, languageCode: string) => {
     await generateTrail({ languageCode, forceRegenerate: true });
   };
 
@@ -62,8 +70,9 @@ export const TrailsPage = () => {
   useEffect(() => {
     if (user) {
       loadActiveTrails();
+      loadEnrolledLanguages();
     }
-  }, [user, loadActiveTrails]);
+  }, [user, loadActiveTrails, loadEnrolledLanguages]);
 
   if (authLoading || !user) {
     return (
@@ -100,14 +109,53 @@ export const TrailsPage = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Page Title */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-serif italic text-text mb-2">
-            Minhas Trilhas de Aprendizado
-          </h1>
-          <p className="text-text-light">
-            Acompanhe seu progresso em cada idioma que você está aprendendo.
-          </p>
+        {/* Page Title + Create Button */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-serif italic text-text mb-2">
+              Minhas Trilhas de Aprendizado
+            </h1>
+            <p className="text-text-light">
+              Acompanhe seu progresso em cada idioma que você está aprendendo.
+            </p>
+          </div>
+
+          {/* Create New Trail Button - shows when there are enrolled languages without trails */}
+          {(() => {
+            const availableLanguages = enrolledLanguages.filter(
+              (lang) => !activeTrails.some((t) => t.languageCode === lang.languageCode)
+            );
+            return availableLanguages.length > 0 && activeTrails.length < 3 && (
+              <div className="flex items-center gap-3">
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="px-4 py-2 rounded-full border border-gray-200 bg-white text-text text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  {availableLanguages.map((lang) => (
+                    <option key={lang.languageCode} value={lang.languageCode}>
+                      {lang.languageNamePt}
+                    </option>
+                  ))}
+                </select>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleGenerateNew}
+                disabled={isGeneratingNew || isGenerating}
+              >
+                {isGeneratingNew ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Gerando...
+                  </span>
+                ) : (
+                  '+ Nova Trilha'
+                )}
+              </Button>
+            </div>
+            );
+          })()}
         </div>
 
         {/* Error State */}
@@ -183,47 +231,59 @@ export const TrailsPage = () => {
               Nenhuma trilha ativa
             </h2>
             <p className="text-text-light max-w-md mx-auto mb-6">
-              Selecione um idioma e gere sua trilha de aprendizado personalizada com IA.
+              {enrolledLanguages.length > 0
+                ? 'Selecione um idioma e gere sua trilha de aprendizado personalizada com IA.'
+                : 'Você ainda não está inscrito em nenhum idioma. Configure seus idiomas primeiro.'}
             </p>
 
-            {/* Language Selector */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-              <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="px-4 py-3 rounded-full border border-gray-200 bg-white text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-w-[200px]"
-              >
-                {AVAILABLE_LANGUAGES.map((lang) => (
-                  <option key={lang.code} value={lang.code}>
-                    {lang.flag} {lang.name}
-                  </option>
-                ))}
-              </select>
+            {enrolledLanguages.length > 0 ? (
+              <>
+                {/* Language Selector */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    className="px-4 py-3 rounded-full border border-gray-200 bg-white text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-w-[200px]"
+                  >
+                    {enrolledLanguages.map((lang) => (
+                      <option key={lang.languageCode} value={lang.languageCode}>
+                        {lang.languageNamePt}
+                      </option>
+                    ))}
+                  </select>
 
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleGenerateNew}
-                disabled={isGeneratingNew}
-              >
-                {isGeneratingNew ? (
-                  <span className="flex items-center gap-2">
-                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Gerando...
-                  </span>
-                ) : (
-                  'Gerar Trilha'
-                )}
-              </Button>
-            </div>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={handleGenerateNew}
+                    disabled={isGeneratingNew || !selectedLanguage}
+                  >
+                    {isGeneratingNew ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Gerando...
+                      </span>
+                    ) : (
+                      'Gerar Trilha'
+                    )}
+                  </Button>
+                </div>
 
-            <p className="text-sm text-text-light">
-              Ou{' '}
-              <Link to="/profile/learning" className="text-primary hover:underline">
-                configure suas preferências
-              </Link>{' '}
-              antes de gerar.
-            </p>
+                <p className="text-sm text-text-light">
+                  Ou{' '}
+                  <Link to="/profile/learning" className="text-primary hover:underline">
+                    configure suas preferências
+                  </Link>{' '}
+                  antes de gerar.
+                </p>
+              </>
+            ) : (
+              <Link to="/onboarding/language">
+                <Button variant="primary" size="lg">
+                  Escolher Idiomas
+                </Button>
+              </Link>
+            )}
           </div>
         )}
 

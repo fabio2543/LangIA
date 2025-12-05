@@ -9,7 +9,22 @@ import type {
   GenerateTrailRequest,
   RefreshTrailRequest,
   UpdateLessonProgressRequest,
+  LanguageEnrollment,
 } from '../types/trail';
+
+// ============================================
+// Language Enrollment Endpoints
+// ============================================
+
+export const languageService = {
+  /**
+   * Busca os idiomas em que o usuário está inscrito.
+   */
+  getEnrollments: async (): Promise<LanguageEnrollment[]> => {
+    const response = await api.get<LanguageEnrollment[]>('/profile/languages');
+    return response.data;
+  },
+};
 
 // ============================================
 // Trail Endpoints

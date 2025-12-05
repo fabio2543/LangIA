@@ -193,3 +193,19 @@ export interface Descriptor {
   isCore: boolean;
   estimatedHours: number | null;
 }
+
+// ============================================
+// Language Enrollment Types
+// ============================================
+
+export interface LanguageEnrollment {
+  id: string;
+  languageCode: string;
+  languageNamePt: string;
+  languageNameEn: string;
+  languageNameEs: string;
+  cefrLevel: string;
+  isPrimary: boolean;
+  enrolledAt: string;
+  lastStudiedAt: string | null;
+}
