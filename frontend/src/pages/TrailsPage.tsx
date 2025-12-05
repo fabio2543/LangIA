@@ -27,22 +27,27 @@ export const TrailsPage = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [isGeneratingNew, setIsGeneratingNew] = useState(false);
 
-  // Carrega idiomas inscritos do usuário
+  // Carrega idiomas inscritos do usuário (sem dependências que causem loop)
   const loadEnrolledLanguages = useCallback(async () => {
     try {
       const enrollments = await languageService.getEnrollments();
       setEnrolledLanguages(enrollments);
-      // Define o primeiro idioma disponível como selecionado
-      const availableForTrail = enrollments.filter(
-        (e) => !activeTrails.some((t) => t.languageCode === e.languageCode)
-      );
-      if (availableForTrail.length > 0 && !selectedLanguage) {
-        setSelectedLanguage(availableForTrail[0].languageCode);
-      }
     } catch (err) {
       console.error('Erro ao carregar idiomas:', err);
     }
-  }, [activeTrails, selectedLanguage]);
+  }, []);
+
+  // Define o idioma selecionado quando os dados carregam
+  useEffect(() => {
+    if (enrolledLanguages.length > 0 && !selectedLanguage) {
+      const availableForTrail = enrolledLanguages.filter(
+        (e) => !activeTrails.some((t) => t.languageCode === e.languageCode)
+      );
+      if (availableForTrail.length > 0) {
+        setSelectedLanguage(availableForTrail[0].languageCode);
+      }
+    }
+  }, [enrolledLanguages, activeTrails, selectedLanguage]);
 
   const handleRegenerate = async (_trailId: string, languageCode: string) => {
     await generateTrail({ languageCode, forceRegenerate: true });
