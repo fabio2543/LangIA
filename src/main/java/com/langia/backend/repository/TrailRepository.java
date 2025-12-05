@@ -122,6 +122,7 @@ public interface TrailRepository extends JpaRepository<Trail, UUID> {
     @Query("SELECT DISTINCT t FROM Trail t " +
            "LEFT JOIN FETCH t.modules m " +
            "LEFT JOIN FETCH m.lessons " +
+           "LEFT JOIN FETCH m.competency " +
            "LEFT JOIN FETCH t.progress " +
            "LEFT JOIN FETCH t.language " +
            "LEFT JOIN FETCH t.level " +
