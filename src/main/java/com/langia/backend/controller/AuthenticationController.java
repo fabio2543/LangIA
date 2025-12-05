@@ -18,8 +18,11 @@ import com.langia.backend.dto.LoginResponseDTO;
 import com.langia.backend.dto.MessageResponse;
 import com.langia.backend.dto.SessionData;
 import com.langia.backend.dto.SessionValidationResponse;
+import com.langia.backend.exception.InvalidCredentialsException;
 import com.langia.backend.exception.InvalidSessionException;
+import com.langia.backend.exception.RateLimitExceededException;
 import com.langia.backend.service.AuthenticationService;
+import com.langia.backend.service.LoginRateLimitService;
 import com.langia.backend.util.TokenExtractor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,6 +44,7 @@ public class AuthenticationController {
     private final AuthenticationService authenticationService;
     private final TokenExtractor tokenExtractor;
     private final AuthCookieProperties cookieProperties;
+    private final LoginRateLimitService loginRateLimitService;
 
     @Value("${jwt.expiration}")
     private Long jwtExpirationMs;
@@ -49,22 +53,60 @@ public class AuthenticationController {
      * Endpoint de login.
      * Recebe credenciais do usuário e retorna token JWT se válidas.
      * O token é enviado tanto no corpo da resposta quanto em um cookie HttpOnly.
+     * Inclui rate limiting para proteção contra ataques de força bruta.
      *
      * @param loginRequest credenciais de login (email e senha)
+     * @param request requisição HTTP para extração do IP
      * @return resposta com token e dados do usuário
+     * @throws RateLimitExceededException se o limite de tentativas for excedido
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
-        log.info("Requisição de login recebida para email: {}", loginRequest.getEmail());
-        LoginResponseDTO response = authenticationService.login(loginRequest);
+    public ResponseEntity<LoginResponseDTO> login(
+            @Valid @RequestBody LoginRequestDTO loginRequest,
+            HttpServletRequest request) {
 
-        // Cria cookie HttpOnly com o token JWT
-        ResponseCookie authCookie = buildAuthCookie(response.getToken(), Duration.ofMillis(jwtExpirationMs));
+        String clientIp = getClientIp(request);
+        String email = loginRequest.getEmail();
 
-        log.info("Login bem-sucedido via API para: {}", loginRequest.getEmail());
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, authCookie.toString())
-                .body(response);
+        log.info("Requisição de login recebida para email: {} (IP: {})", email, clientIp);
+
+        // Verifica rate limiting por IP
+        if (loginRateLimitService.isIpBlocked(clientIp)) {
+            long retryAfter = loginRateLimitService.getTimeUntilReset(clientIp);
+            log.warn("Login bloqueado por rate limit de IP: {} (retry em {}s)", clientIp, retryAfter);
+            throw new RateLimitExceededException(retryAfter);
+        }
+
+        // Verifica rate limiting por email
+        if (loginRateLimitService.isEmailBlocked(email)) {
+            long retryAfter = loginRateLimitService.getTimeUntilReset(clientIp);
+            log.warn("Login bloqueado por rate limit de email: {} (retry em {}s)", email, retryAfter);
+            throw new RateLimitExceededException(retryAfter);
+        }
+
+        try {
+            LoginResponseDTO response = authenticationService.login(loginRequest);
+
+            // Login bem-sucedido: reseta contadores
+            loginRateLimitService.resetOnSuccess(clientIp, email);
+
+            // Cria cookie HttpOnly com o token JWT
+            ResponseCookie authCookie = buildAuthCookie(response.getToken(), Duration.ofMillis(jwtExpirationMs));
+
+            log.info("Login bem-sucedido via API para: {}", email);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, authCookie.toString())
+                    .body(response);
+
+        } catch (InvalidCredentialsException e) {
+            // Login falhou: registra tentativa
+            loginRateLimitService.recordFailedAttempt(clientIp, email);
+            int remainingIp = loginRateLimitService.getRemainingAttemptsForIp(clientIp);
+            int remainingEmail = loginRateLimitService.getRemainingAttemptsForEmail(email);
+            log.warn("Falha de login para email: {} (tentativas restantes - IP: {}, Email: {})",
+                    email, remainingIp, remainingEmail);
+            throw e;
+        }
     }
 
     /**
@@ -178,5 +220,26 @@ public class AuthenticationController {
             throw new InvalidSessionException("No token provided");
         }
         return token;
+    }
+
+    /**
+     * Extrai o IP real do cliente, considerando headers de proxy.
+     *
+     * @param request requisição HTTP
+     * @return IP do cliente
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            // X-Forwarded-For pode conter múltiplos IPs, pega o primeiro (cliente original)
+            return xForwardedFor.split(",")[0].trim();
+        }
+
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty()) {
+            return xRealIp;
+        }
+
+        return request.getRemoteAddr();
     }
 }

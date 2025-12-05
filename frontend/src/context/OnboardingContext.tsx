@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { onboardingService } from '../services/onboardingService';
 import { OnboardingContext } from './OnboardingContextDef';
+import { logger } from '../utils/logger';
 import type { OnboardingStatus, OnboardingStep, OnboardingCompleteResponse } from '../types';
 
 const STEPS_ORDER: OnboardingStep[] = ['welcome', 'language', 'preferences', 'assessment', 'complete'];
@@ -28,7 +29,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (err) {
       setError('Erro ao carregar status do onboarding');
-      console.error('Erro ao carregar status:', err);
+      logger.error('Erro ao carregar status:', err);
     } finally {
       setIsLoading(false);
     }
@@ -60,13 +61,13 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
   }, [currentStep, goToStep]);
 
   const completeOnboarding = useCallback(async (): Promise<OnboardingCompleteResponse> => {
-    console.log('[OnboardingContext] completeOnboarding called');
+    logger.log('[OnboardingContext] completeOnboarding called');
     try {
       setIsLoading(true);
       setError(null);
-      console.log('[OnboardingContext] Calling onboardingService.complete...');
+      logger.log('[OnboardingContext] Calling onboardingService.complete...');
       const response = await onboardingService.complete();
-      console.log('[OnboardingContext] Response:', response);
+      logger.log('[OnboardingContext] Response:', response);
 
       if (response.success) {
         // Atualiza o contexto de auth
@@ -84,7 +85,7 @@ export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       const message = 'Erro ao completar onboarding';
       setError(message);
-      console.error(message, err);
+      logger.error(message, err);
       throw err;
     } finally {
       setIsLoading(false);

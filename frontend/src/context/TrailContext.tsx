@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { trailService, subscribeToGenerationStatus } from '../services/trailService';
+import { logger } from '../utils/logger';
 import type {
   Trail,
   TrailSummary,
@@ -128,7 +129,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       setActiveTrails(trails);
     } catch (err) {
       setError('Erro ao carregar trilhas');
-      console.error('Error loading active trails:', err);
+      logger.error('Error loading active trails:', err);
     } finally {
       setIsLoading(false);
     }
@@ -144,7 +145,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       return trail;
     } catch (err) {
       setError('Erro ao carregar trilha');
-      console.error('Error loading trail by id:', err);
+      logger.error('Error loading trail by id:', err);
       throw err;
     } finally {
       setIsLoading(false);
@@ -187,7 +188,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       return trail;
     } catch (err) {
       setError('Erro ao carregar trilha');
-      console.error('Error loading trail by language:', err);
+      logger.error('Error loading trail by language:', err);
       throw err;
     } finally {
       setIsLoading(false);
@@ -235,7 +236,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
     } catch (err) {
       setIsGenerating(false);
       setError('Erro ao gerar trilha');
-      console.error('Error generating trail:', err);
+      logger.error('Error generating trail:', err);
       throw err;
     } finally {
       setIsLoading(false);
@@ -257,7 +258,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       return trail;
     } catch (err) {
       setError('Erro ao regenerar trilha');
-      console.error('Error refreshing trail:', err);
+      logger.error('Error refreshing trail:', err);
       throw err;
     } finally {
       setIsLoading(false);
@@ -277,7 +278,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       loadActiveTrails();
     } catch (err) {
       setError('Erro ao arquivar trilha');
-      console.error('Error archiving trail:', err);
+      logger.error('Error archiving trail:', err);
       throw err;
     } finally {
       setIsLoading(false);
@@ -297,7 +298,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       return module;
     } catch (err) {
       setError('Erro ao carregar módulo');
-      console.error('Error loading module:', err);
+      logger.error('Error loading module:', err);
       throw err;
     } finally {
       setIsLoading(false);
@@ -314,7 +315,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       return lesson;
     } catch (err) {
       setError('Erro ao carregar lição');
-      console.error('Error loading lesson:', err);
+      logger.error('Error loading lesson:', err);
       throw err;
     } finally {
       setIsLoading(false);
@@ -333,7 +334,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       return lesson;
     } catch (err) {
       setError('Erro ao carregar próxima lição');
-      console.error('Error loading next lesson:', err);
+      logger.error('Error loading next lesson:', err);
       throw err;
     } finally {
       setIsLoading(false);
@@ -358,7 +359,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       return lesson;
     } catch (err) {
       setError('Erro ao atualizar progresso');
-      console.error('Error updating lesson progress:', err);
+      logger.error('Error updating lesson progress:', err);
       throw err;
     }
   }, [currentTrail, loadTrailById]);
@@ -383,7 +384,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
       return await trailService.getProgress(trailId);
     } catch (err) {
       setError('Erro ao carregar progresso');
-      console.error('Error loading progress:', err);
+      logger.error('Error loading progress:', err);
       throw err;
     }
   }, []);

@@ -115,4 +115,16 @@ public interface TrailRepository extends JpaRepository<Trail, UUID> {
            "AND t.status = 'READY' " +
            "ORDER BY t.updatedAt DESC")
     List<Trail> findReadyByStudentId(@Param("studentId") UUID studentId);
+
+    /**
+     * Busca trilha por ID com módulos e lições (evita N+1 queries).
+     */
+    @Query("SELECT DISTINCT t FROM Trail t " +
+           "LEFT JOIN FETCH t.modules m " +
+           "LEFT JOIN FETCH m.lessons " +
+           "LEFT JOIN FETCH t.progress " +
+           "LEFT JOIN FETCH t.language " +
+           "LEFT JOIN FETCH t.level " +
+           "WHERE t.id = :id")
+    Optional<Trail> findByIdWithModulesAndLessons(@Param("id") UUID id);
 }

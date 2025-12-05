@@ -73,6 +73,7 @@ public class TrailService {
     private final CurriculumService curriculumService;
     private final BlueprintService blueprintService;
     private final TrailGenerationAIService trailGenerationAIService;
+    private final TrailGenerationJobService trailGenerationJobService;
 
     // ========== BUSCA DE TRILHAS ==========
 
@@ -102,11 +103,11 @@ public class TrailService {
     }
 
     /**
-     * Busca trilha por ID.
+     * Busca trilha por ID com módulos e lições carregados.
      */
     @Transactional(readOnly = true)
     public TrailDTO getTrailById(UUID trailId) {
-        Trail trail = trailRepository.findById(trailId)
+        Trail trail = trailRepository.findByIdWithModulesAndLessons(trailId)
                 .orElseThrow(() -> new TrailNotFoundException(trailId));
         return trailMapper.toTrailDTO(trail);
     }
@@ -210,9 +211,9 @@ public class TrailService {
         int totalLessons = (int) lessonRepository.countByTrailId(trail.getId());
         trailProgressService.createProgress(trail, totalLessons);
 
-        // Em produção, aqui enfileiraria job de geração de conteúdo via RabbitMQ
-        // Por enquanto, simula geração completa
-        completeTrailGeneration(trail.getId());
+        // Enfileira job assíncrono de geração de conteúdo via RabbitMQ
+        trailGenerationJobService.enqueueGeneration(trail);
+        log.info("Job de geração enfileirado para trilha: {}", trail.getId());
 
         return trailMapper.toTrailDTO(trail);
     }
@@ -290,7 +291,9 @@ public class TrailService {
         int totalLessons = (int) lessonRepository.countByTrailId(newTrail.getId());
         trailProgressService.createProgress(newTrail, totalLessons);
 
-        completeTrailGeneration(newTrail.getId());
+        // Enfileira job assíncrono de geração de conteúdo via RabbitMQ
+        trailGenerationJobService.enqueueGeneration(newTrail);
+        log.info("Job de geração enfileirado para refresh da trilha: {}", newTrail.getId());
 
         return trailMapper.toTrailDTO(newTrail);
     }

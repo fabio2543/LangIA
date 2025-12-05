@@ -1,5 +1,6 @@
 import api from './api';
 import type { OnboardingStatus, OnboardingCompleteResponse } from '../types';
+import { logger } from '../utils/logger';
 
 /**
  * Serviço para gerenciamento do processo de onboarding.
@@ -18,13 +19,13 @@ export const onboardingService = {
    * Gera automaticamente a trilha para o idioma primário.
    */
   complete: async (): Promise<OnboardingCompleteResponse> => {
-    console.log('[onboardingService] complete() called');
+    logger.log('[onboardingService] complete() called');
     try {
       const response = await api.post<OnboardingCompleteResponse>('/onboarding/complete');
-      console.log('[onboardingService] complete() response:', response.data);
+      logger.log('[onboardingService] complete() response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('[onboardingService] complete() error:', error);
+      logger.error('[onboardingService] complete() error:', error);
       throw error;
     }
   },

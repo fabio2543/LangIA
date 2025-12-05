@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOnboarding } from '../../../hooks/useOnboarding';
 import { profileService } from '../../../services/profileService';
 import { Button } from '../../common/Button';
+import { logger } from '../../../utils/logger';
 import type { UpdatePersonalDataRequest } from '../../../types';
 
 const NATIVE_LANGUAGE_OPTIONS = [
@@ -32,7 +33,7 @@ export const WelcomeStep = () => {
           timezone: data.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         });
       } catch (err) {
-        console.error('Erro ao carregar perfil:', err);
+        logger.error('Erro ao carregar perfil:', err);
       } finally {
         setIsLoading(false);
       }
@@ -61,7 +62,7 @@ export const WelcomeStep = () => {
       nextStep();
     } catch (err) {
       setError('Erro ao salvar dados. Tente novamente.');
-      console.error('Erro ao salvar:', err);
+      logger.error('Erro ao salvar:', err);
     } finally {
       setIsSaving(false);
     }

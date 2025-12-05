@@ -10,6 +10,7 @@ import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
 import { learningPreferencesService, languageService } from '../../services/profileService';
 import { handleApiError } from '../../services/api';
+import { logger } from '../../utils/logger';
 import type {
   LearningPreferences,
   CefrLevel,
@@ -60,7 +61,7 @@ export const LearningPreferencesTab = () => {
       setAvailableLanguages(available);
       setEnrollments(userEnrollments);
     } catch (err) {
-      console.error('Error loading languages:', err);
+      logger.error('Error loading languages:', err);
     }
   }, []);
 
@@ -87,7 +88,7 @@ export const LearningPreferencesTab = () => {
           });
         }
       } catch {
-        console.log('No preferences found, using defaults');
+        logger.log('No preferences found, using defaults');
       } finally {
         setIsLoading(false);
       }

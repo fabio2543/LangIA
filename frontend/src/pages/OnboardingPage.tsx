@@ -8,26 +8,46 @@ import { useAuth } from '../hooks/useAuth';
 const OnboardingContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
-  const { currentStep, goToStep, isLoading } = useOnboarding();
+  const { user, isLoading: isAuthLoading } = useAuth();
+  const { currentStep, goToStep, isLoading: isOnboardingLoading } = useOnboarding();
 
-  // Se ja completou onboarding, redireciona
+  // Redireciona para login se não estiver autenticado
   useEffect(() => {
-    if (user?.onboardingCompleted) {
+    if (!user && !isAuthLoading) {
+      navigate('/login');
+    }
+  }, [user, isAuthLoading, navigate]);
+
+  // Se ja completou onboarding, redireciona para dashboard
+  useEffect(() => {
+    if (user?.onboardingCompleted && !isAuthLoading) {
       navigate('/dashboard');
     }
-  }, [user?.onboardingCompleted, navigate]);
+  }, [user?.onboardingCompleted, isAuthLoading, navigate]);
 
-  // Sincroniza URL com step atual
+  // Sincroniza URL com step atual (só executa se autenticado)
   useEffect(() => {
+    if (!user || isAuthLoading || isOnboardingLoading) return;
+
     const pathStep = location.pathname.split('/').pop();
-    if (pathStep && pathStep !== currentStep && !isLoading) {
-      // URL nao corresponde ao step atual - redireciona para o step correto
+    if (pathStep && pathStep !== currentStep) {
       navigate(`/onboarding/${currentStep}`, { replace: true });
     }
-  }, [currentStep, location.pathname, navigate, isLoading]);
+  }, [user, isAuthLoading, currentStep, location.pathname, navigate, isOnboardingLoading]);
 
-  if (isLoading) {
+  // Mostra loading enquanto verifica autenticação
+  if (isAuthLoading || !user) {
+    return (
+      <div className="min-h-screen bg-bg-warm flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">...</div>
+          <p className="text-text-light">Verificando autenticacao...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isOnboardingLoading) {
     return (
       <div className="min-h-screen bg-bg-warm flex items-center justify-center">
         <div className="text-center">

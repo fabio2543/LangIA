@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOnboarding } from '../../../hooks/useOnboarding';
 import { languageService, skillAssessmentService } from '../../../services/profileService';
 import { Button } from '../../common/Button';
+import { logger } from '../../../utils/logger';
 import type { SkillAssessment, DifficultyLevel, CefrLevel, LanguageEnrollment } from '../../../types';
 
 const DIFFICULTY_OPTIONS: { value: DifficultyLevel; label: string; color: string }[] = [
@@ -47,7 +48,7 @@ export const AssessmentStep = () => {
         const enrolled = await languageService.getEnrollments();
         setEnrolledLanguages(enrolled);
       } catch (err) {
-        console.error('Erro ao carregar idiomas:', err);
+        logger.error('Erro ao carregar idiomas:', err);
         setError('Erro ao carregar seus idiomas');
       } finally {
         setIsLoading(false);
@@ -100,7 +101,7 @@ export const AssessmentStep = () => {
       }
     } catch (err) {
       setError('Erro ao salvar avaliacao. Tente novamente.');
-      console.error('Erro ao salvar:', err);
+      logger.error('Erro ao salvar:', err);
     } finally {
       setIsSaving(false);
     }

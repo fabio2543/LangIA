@@ -1,4 +1,5 @@
 import api from './api';
+import { logger } from '../utils/logger';
 import type {
   Trail,
   TrailSummary,
@@ -181,7 +182,7 @@ export const subscribeToGenerationStatus = (
       const data = JSON.parse(event.data);
       onMessage(data);
     } catch {
-      console.error('Error parsing SSE message:', event.data);
+      logger.error('Error parsing SSE message:', event.data);
     }
   };
 

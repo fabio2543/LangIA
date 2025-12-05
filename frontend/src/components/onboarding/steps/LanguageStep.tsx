@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOnboarding } from '../../../hooks/useOnboarding';
 import { languageService } from '../../../services/profileService';
 import { Button } from '../../common/Button';
+import { logger } from '../../../utils/logger';
 import type { Language, CefrLevel } from '../../../types';
 
 // Idiomas disponíveis por enquanto (Inglês e Espanhol)
@@ -53,7 +54,7 @@ export const LanguageStep = () => {
           );
         }
       } catch (err) {
-        console.error('Erro ao carregar idiomas:', err);
+        logger.error('Erro ao carregar idiomas:', err);
         setError('Erro ao carregar idiomas disponíveis');
       } finally {
         setIsLoading(false);
@@ -118,7 +119,7 @@ export const LanguageStep = () => {
       nextStep();
     } catch (err) {
       setError('Erro ao salvar idiomas. Tente novamente.');
-      console.error('Erro ao salvar:', err);
+      logger.error('Erro ao salvar:', err);
     } finally {
       setIsSaving(false);
     }

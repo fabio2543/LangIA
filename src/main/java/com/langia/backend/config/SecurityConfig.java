@@ -9,6 +9,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 import com.langia.backend.filter.JwtAuthenticationFilter;
 
@@ -36,24 +38,41 @@ public class SecurityConfig {
      * Define:
      * - Rotas públicas que não exigem autenticação
      * - Rotas protegidas que exigem token JWT válido
-     * - Desabilita CSRF do Spring (proteção via SameSite cookie)
+     * - Proteção CSRF via Double Submit Cookie
      * - Configura política de sessão como STATELESS (usando JWT, não sessões HTTP)
      * - Injeta o filtro JWT na cadeia de filtros
      * - Configura handlers customizados para erros de autenticação/autorização
      *
      * NOTA DE SEGURANÇA (CSRF):
-     * O CSRF do Spring Security está desabilitado porque usamos cookies HttpOnly com
-     * atributo SameSite=Lax (configurável para Strict em produção). O SameSite previne
-     * que o cookie seja enviado em requisições cross-site, fornecendo proteção equivalente
-     * ou superior ao token CSRF tradicional para navegadores modernos.
+     * Proteção em duas camadas:
+     * 1. Cookies JWT com SameSite=Lax/Strict (previne ataques cross-site em navegadores modernos)
+     * 2. Double Submit Cookie: token CSRF enviado via cookie XSRF-TOKEN e validado via header X-XSRF-TOKEN
      * Ver: https://owasp.org/www-community/SameSite
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        // Configura CSRF com Double Submit Cookie pattern
+        // O cookie XSRF-TOKEN é lido pelo frontend e enviado no header X-XSRF-TOKEN
+        CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        // Não defer o token - sempre carrega para garantir que o cookie seja setado
+        requestHandler.setCsrfRequestAttributeName(null);
+
         http
-            // CSRF desabilitado - proteção fornecida pelo atributo SameSite do cookie
-            // O cookie JWT usa SameSite=Lax/Strict (configurado via auth.cookie.same-site)
-            .csrf(csrf -> csrf.disable())
+            // CSRF habilitado com Double Submit Cookie
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(csrfTokenRepository)
+                .csrfTokenRequestHandler(requestHandler)
+                // Ignora CSRF para rotas públicas (login, registro, etc.)
+                .ignoringRequestMatchers(
+                    "/api/auth/login",
+                    "/api/auth/password/**",
+                    "/api/auth/email/**",
+                    "/api/users/register",
+                    "/api/profile/languages/available",
+                    "/actuator/**"
+                )
+            )
 
             // Configura autorização de requisições
             .authorizeHttpRequests(auth -> auth

@@ -1,9 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTrail } from '../hooks/useTrail';
 import { TrailCard, TrailGenerating } from '../components/trail';
 import { Button } from '../components/common/Button';
+
+const AVAILABLE_LANGUAGES = [
+  { code: 'en', name: 'Inglês', flag: '🇺🇸' },
+  { code: 'es', name: 'Espanhol', flag: '🇪🇸' },
+  { code: 'fr', name: 'Francês', flag: '🇫🇷' },
+  { code: 'de', name: 'Alemão', flag: '🇩🇪' },
+  { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+  { code: 'pt', name: 'Português', flag: '🇧🇷' },
+  { code: 'ja', name: 'Japonês', flag: '🇯🇵' },
+  { code: 'ko', name: 'Coreano', flag: '🇰🇷' },
+  { code: 'zh', name: 'Chinês', flag: '🇨🇳' },
+];
 
 /**
  * Página de listagem de trilhas ativas do estudante.
@@ -17,7 +29,29 @@ export const TrailsPage = () => {
     error,
     generationStatus,
     loadActiveTrails,
+    generateTrail,
+    archiveTrail,
   } = useTrail();
+
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [isGeneratingNew, setIsGeneratingNew] = useState(false);
+
+  const handleRegenerate = async (trailId: string, languageCode: string) => {
+    await generateTrail({ languageCode, forceRegenerate: true });
+  };
+
+  const handleDelete = async (trailId: string) => {
+    await archiveTrail(trailId);
+  };
+
+  const handleGenerateNew = async () => {
+    setIsGeneratingNew(true);
+    try {
+      await generateTrail({ languageCode: selectedLanguage });
+    } finally {
+      setIsGeneratingNew(false);
+    }
+  };
 
   useEffect(() => {
     if (!user && !authLoading) {
@@ -134,6 +168,8 @@ export const TrailsPage = () => {
                 key={trail.id}
                 trail={trail}
                 onClick={() => navigate(`/trails/${trail.id}`)}
+                onRegenerate={handleRegenerate}
+                onDelete={handleDelete}
               />
             ))}
           </div>
@@ -147,13 +183,47 @@ export const TrailsPage = () => {
               Nenhuma trilha ativa
             </h2>
             <p className="text-text-light max-w-md mx-auto mb-6">
-              Acesse seu perfil para configurar um idioma de estudo e começar sua jornada de aprendizado personalizada.
+              Selecione um idioma e gere sua trilha de aprendizado personalizada com IA.
             </p>
-            <Link to="/profile/learning">
-              <Button variant="primary" size="lg">
-                Configurar Idioma
+
+            {/* Language Selector */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="px-4 py-3 rounded-full border border-gray-200 bg-white text-text focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-w-[200px]"
+              >
+                {AVAILABLE_LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.name}
+                  </option>
+                ))}
+              </select>
+
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleGenerateNew}
+                disabled={isGeneratingNew}
+              >
+                {isGeneratingNew ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Gerando...
+                  </span>
+                ) : (
+                  'Gerar Trilha'
+                )}
               </Button>
-            </Link>
+            </div>
+
+            <p className="text-sm text-text-light">
+              Ou{' '}
+              <Link to="/profile/learning" className="text-primary hover:underline">
+                configure suas preferências
+              </Link>{' '}
+              antes de gerar.
+            </p>
           </div>
         )}
 

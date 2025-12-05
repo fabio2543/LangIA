@@ -19,13 +19,45 @@ export const dispatchAuthError = () => {
   window.dispatchEvent(new CustomEvent(AUTH_ERROR_EVENT));
 };
 
+/**
+ * Extrai o valor de um cookie pelo nome.
+ * Usado para ler o token CSRF (XSRF-TOKEN) enviado pelo backend.
+ */
+const getCookie = (name: string): string | null => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
+  }
+  return null;
+};
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Essencial para envio automático de cookies HttpOnly
+  xsrfCookieName: 'XSRF-TOKEN',  // Nome do cookie CSRF definido pelo Spring Security
+  xsrfHeaderName: 'X-XSRF-TOKEN', // Header que o backend espera
 });
+
+// Interceptor para garantir que o token CSRF seja enviado em requisições mutáveis
+api.interceptors.request.use(
+  (config) => {
+    // Para requisições que modificam dados (POST, PUT, DELETE, PATCH),
+    // inclui o token CSRF do cookie no header
+    const method = config.method?.toUpperCase();
+    if (method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+      const csrfToken = getCookie('XSRF-TOKEN');
+      if (csrfToken) {
+        config.headers['X-XSRF-TOKEN'] = csrfToken;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // Interceptor para tratar erros de autenticação
 // Token agora é gerenciado via cookie HttpOnly (mais seguro contra XSS)
@@ -33,8 +65,8 @@ api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Limpa dados locais do usuário (token não está mais no localStorage)
-      localStorage.removeItem('langia-user');
+      // Limpa dados locais do usuário (usa sessionStorage para dados sensíveis)
+      sessionStorage.removeItem('langia-user');
       // Dispara evento para o AuthContext redirecionar via React Router
       dispatchAuthError();
     }

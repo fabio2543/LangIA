@@ -155,12 +155,28 @@ public class TrailGenerationJob {
 
     /**
      * Marca o job como falho.
+     * O errorDetails é armazenado como JSON no banco.
      */
     public void markAsFailed(String error, String errorDetails) {
         this.status = GenerationJobStatus.FAILED;
         this.failedAt = OffsetDateTime.now();
         this.lastError = error;
-        this.errorDetails = errorDetails;
+        // Garante que errorDetails seja JSON válido ou null
+        if (errorDetails != null && !errorDetails.isBlank()) {
+            // Se já for JSON, usa direto. Senão, encapsula como string JSON
+            if (errorDetails.trim().startsWith("{") || errorDetails.trim().startsWith("[")) {
+                this.errorDetails = errorDetails;
+            } else {
+                // Escapa a string para JSON
+                this.errorDetails = "\"" + errorDetails.replace("\\", "\\\\")
+                        .replace("\"", "\\\"")
+                        .replace("\n", "\\n")
+                        .replace("\r", "\\r")
+                        .replace("\t", "\\t") + "\"";
+            }
+        } else {
+            this.errorDetails = null;
+        }
     }
 
     /**

@@ -7,6 +7,42 @@
 - Docker
 - pgvector
 
+# Regras do Projeto LangIA
+
+## ⚠️ REGRA CRÍTICA: NÃO SUBIR O SPRING AUTOMATICAMENTE
+
+### O que NÃO fazer:
+- NÃO execute `./mvnw spring-boot:run` automaticamente
+- NÃO execute `java -jar` automaticamente
+- NÃO execute `docker-compose up` sem pedir permissão
+- NÃO inicie o servidor para "testar" código
+
+### Quando PODE subir o Spring:
+- SOMENTE quando eu pedir explicitamente: "suba o servidor", "inicie o spring", "rode a aplicação"
+- SOMENTE após perguntar: "Posso iniciar o servidor Spring para testar?"
+
+### Para compilar/buildar (PODE fazer):
+- `./mvnw compile` ✅
+- `./mvnw test` ✅
+- `./mvnw package -DskipTests` ✅
+
+### Para verificar código (PODE fazer):
+- Ler arquivos ✅
+- Editar arquivos ✅
+- Criar arquivos ✅
+- Rodar testes unitários ✅
+
+## Motivo
+O servidor Spring consome recursos e causa conflito de portas quando iniciado múltiplas vezes. O desenvolvedor controla manualmente quando o servidor deve rodar.
+
+## Ambiente
+- Java 17
+- Spring Boot 3.x
+- PostgreSQL (porta 5432)
+- RabbitMQ (porta 5672)
+- Aplicação (porta 8080)
+
+
 ## Arquitetura
 
 

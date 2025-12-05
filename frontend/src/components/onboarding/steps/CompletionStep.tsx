@@ -1,24 +1,24 @@
 import { useState } from 'react';
 import { useOnboarding } from '../../../hooks/useOnboarding';
 import { Button } from '../../common/Button';
+import { logger } from '../../../utils/logger';
 
 export const CompletionStep = () => {
   const { completeOnboarding, prevStep, status, isLoading: contextLoading } = useOnboarding();
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const handleComplete = async () => {
-    console.log('[CompletionStep] handleComplete called');
-    console.log('[CompletionStep] status:', status);
-    console.log('[CompletionStep] isGenerating:', isGenerating);
-    console.log('[CompletionStep] contextLoading:', contextLoading);
+    logger.log('[CompletionStep] handleComplete called');
+    logger.log('[CompletionStep] status:', status);
     try {
       setIsGenerating(true);
       setError(null);
-      console.log('[CompletionStep] Calling completeOnboarding...');
+      logger.log('[CompletionStep] Calling completeOnboarding...');
       const response = await completeOnboarding();
-      console.log('[CompletionStep] Response:', response);
+      logger.log('[CompletionStep] Response:', response);
 
       if (response.success) {
         setSuccess(true);
@@ -28,7 +28,7 @@ export const CompletionStep = () => {
       }
     } catch (err) {
       setError('Ocorreu um erro. Tente novamente.');
-      console.error('Erro ao completar onboarding:', err);
+      logger.error('Erro ao completar onboarding:', err);
     } finally {
       setIsGenerating(false);
     }
@@ -149,14 +149,6 @@ export const CompletionStep = () => {
             </span>
           </div>
         </div>
-      </div>
-
-      {/* Debug info */}
-      <div className="text-xs text-gray-400 mb-2">
-        [DEBUG] languageEnrolled: {String(status?.steps?.languageEnrolled)},
-        contextLoading: {String(contextLoading)},
-        isGenerating: {String(isGenerating)},
-        disabled: {String(!status?.steps?.languageEnrolled || contextLoading || isGenerating)}
       </div>
 
       {/* Botoes */}

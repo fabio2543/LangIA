@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.langia.backend.dto.DocumentEmbeddingRequest;
 import com.langia.backend.dto.DocumentEmbeddingResponse;
 import com.langia.backend.dto.SemanticSearchRequest;
+import com.langia.backend.exception.DocumentNotFoundException;
 import com.langia.backend.model.DocumentEmbedding;
 import com.langia.backend.service.EmbeddingService;
 
@@ -135,16 +136,18 @@ public class SearchController {
      * Atualiza embedding de um documento.
      *
      * @param id ID do documento
-     * @return documento atualizado
+     * @return documento atualizado ou 404 se não encontrado
      */
     @PutMapping("/documents/{id}/embedding")
     public ResponseEntity<DocumentEmbeddingResponse> updateEmbedding(@PathVariable UUID id) {
         try {
             DocumentEmbedding document = embeddingService.updateEmbedding(id);
             return ResponseEntity.ok(DocumentEmbeddingResponse.fromEntity(document));
-        } catch (RuntimeException e) {
+        } catch (DocumentNotFoundException e) {
+            log.warn("Documento não encontrado para atualização de embedding: {}", id);
             return ResponseEntity.notFound().build();
         }
+        // Outros erros (infraestrutura, etc.) propagam para GlobalExceptionHandler → 500
     }
 
     /**

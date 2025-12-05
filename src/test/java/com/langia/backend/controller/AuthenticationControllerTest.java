@@ -28,6 +28,7 @@ import com.langia.backend.dto.SessionData;
 import com.langia.backend.exception.InvalidCredentialsException;
 import com.langia.backend.model.UserProfile;
 import com.langia.backend.service.AuthenticationService;
+import com.langia.backend.service.LoginRateLimitService;
 import com.langia.backend.util.TokenExtractor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -53,6 +54,9 @@ class AuthenticationControllerTest {
 
     @MockBean
     private AuthCookieProperties cookieProperties;
+
+    @MockBean
+    private LoginRateLimitService loginRateLimitService;
 
     private LoginRequestDTO validLoginRequest;
     private LoginResponseDTO loginResponse;
@@ -92,6 +96,10 @@ class AuthenticationControllerTest {
         when(cookieProperties.getName()).thenReturn("langia_auth");
         when(cookieProperties.isSecure()).thenReturn(false);
         when(cookieProperties.getSameSite()).thenReturn("Lax");
+
+        // Configura rate limiting para permitir login nos testes
+        when(loginRateLimitService.isIpBlocked(any())).thenReturn(false);
+        when(loginRateLimitService.isEmailBlocked(any())).thenReturn(false);
     }
 
     // ========== Testes de Login ==========

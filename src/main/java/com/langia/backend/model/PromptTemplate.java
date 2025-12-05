@@ -59,7 +59,20 @@ public class PromptTemplate {
     @Column(name = "slots", columnDefinition = "jsonb", nullable = false)
     @JdbcTypeCode(SqlTypes.JSON)
     @Builder.Default
-    private List<String> slots = List.of();
+    private List<PromptSlot> slots = List.of();
+
+    /**
+     * Representa um slot (variável) do template de prompt.
+     */
+    @lombok.Data
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class PromptSlot {
+        private String name;
+        private String type;
+        private boolean required;
+        private String description;
+    }
 
     @Column(name = "output_schema", columnDefinition = "jsonb")
     @JdbcTypeCode(SqlTypes.JSON)

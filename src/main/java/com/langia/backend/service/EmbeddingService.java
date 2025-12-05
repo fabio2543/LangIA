@@ -5,13 +5,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.langia.backend.exception.DocumentNotFoundException;
 import com.langia.backend.model.DocumentEmbedding;
 import com.langia.backend.repository.DocumentEmbeddingRepository;
 
@@ -19,22 +18,23 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Serviço para gerar embeddings e realizar buscas semânticas.
+ * Usa GeminiApiClient para gerar embeddings via API direta do Gemini.
  */
 @Service
 @Slf4j
 public class EmbeddingService {
 
     private final DocumentEmbeddingRepository documentRepository;
-    private final EmbeddingModel embeddingModel;
+    private final GeminiApiClient geminiApiClient;
 
     @Value("${embedding.dimensions:768}")
     private int embeddingDimensions;
 
     @Autowired
     public EmbeddingService(DocumentEmbeddingRepository documentRepository,
-            @Autowired(required = false) EmbeddingModel embeddingModel) {
+            GeminiApiClient geminiApiClient) {
         this.documentRepository = documentRepository;
-        this.embeddingModel = embeddingModel;
+        this.geminiApiClient = geminiApiClient;
     }
 
     /**
@@ -44,14 +44,13 @@ public class EmbeddingService {
      * @return array de floats representando o embedding
      */
     public float[] generateEmbedding(String text) {
-        if (embeddingModel == null) {
-            log.warn("EmbeddingModel não configurado. Retornando embedding vazio.");
+        if (!geminiApiClient.isConfigured()) {
+            log.warn("GeminiApiClient não configurado. Retornando embedding vazio.");
             return new float[embeddingDimensions];
         }
 
         try {
-            EmbeddingResponse response = embeddingModel.embedForResponse(List.of(text));
-            return response.getResult().getOutput();
+            return geminiApiClient.generateEmbedding(text);
         } catch (Exception e) {
             log.error("Erro ao gerar embedding: {}", e.getMessage());
             throw new RuntimeException("Falha ao gerar embedding", e);
@@ -123,7 +122,7 @@ public class EmbeddingService {
     @Transactional
     public DocumentEmbedding updateEmbedding(UUID documentId) {
         DocumentEmbedding document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new RuntimeException("Documento não encontrado: " + documentId));
+                .orElseThrow(() -> new DocumentNotFoundException(documentId));
 
         float[] newEmbedding = generateEmbedding(document.getContent());
         document.setEmbedding(newEmbedding);

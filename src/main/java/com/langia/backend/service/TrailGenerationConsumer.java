@@ -34,7 +34,7 @@ public class TrailGenerationConsumer {
     private final LessonRepository lessonRepository;
     private final TrailGenerationJobService jobService;
     private final TrailProgressService progressService;
-    // TODO: Adicionar ContentGenerationService quando implementar LLM
+    private final TrailGenerationAIService trailGenerationAIService;
 
     /**
      * Processa mensagem de geração de trilha.
@@ -55,6 +55,11 @@ public class TrailGenerationConsumer {
                 log.info("Trilha {} já está pronta, ignorando mensagem", message.getTrailId());
                 return;
             }
+
+            // Marcar job como em processamento
+            String workerId = java.util.UUID.randomUUID().toString();
+            jobService.markJobAsProcessing(message.getTrailId(), workerId);
+            long startTime = System.currentTimeMillis();
 
             // Notificar início
             jobService.sendStartNotification(message.getTrailId(), message.getStudentId());
@@ -107,8 +112,12 @@ public class TrailGenerationConsumer {
                     allLessons.size()
             );
 
-            log.info("Trilha {} gerada com sucesso - {} módulos, {} lições",
-                    message.getTrailId(), totalModules, allLessons.size());
+            // Marcar job como concluído
+            long processingTimeMs = System.currentTimeMillis() - startTime;
+            jobService.markJobAsCompleted(message.getTrailId(), 0, (int) processingTimeMs);
+
+            log.info("Trilha {} gerada com sucesso - {} módulos, {} lições, {}ms",
+                    message.getTrailId(), totalModules, allLessons.size(), processingTimeMs);
 
         } catch (Exception e) {
             log.error("Erro ao gerar trilha {}: {}", message.getTrailId(), e.getMessage(), e);
@@ -118,6 +127,9 @@ public class TrailGenerationConsumer {
                 log.info("Tentando retry para trilha: {}", message.getTrailId());
                 jobService.retryGeneration(message);
             } else {
+                // Marcar job como falho
+                jobService.markJobAsFailed(message.getTrailId(), e.getMessage(), null);
+
                 // Atualizar status da trilha para falha
                 trailRepository.findById(message.getTrailId())
                         .ifPresent(trail -> {
@@ -135,9 +147,8 @@ public class TrailGenerationConsumer {
     }
 
     /**
-     * Gera conteúdo para um módulo.
-     * Por enquanto usa conteúdo placeholder.
-     * TODO: Integrar com ContentGenerationService (LLM) quando disponível.
+     * Gera conteúdo para um módulo usando IA.
+     * Cada lição é gerada individualmente com retry automático.
      */
     private void generateModuleContent(TrailModule module, TrailGenerationMessage message) {
         log.debug("Gerando conteúdo para módulo: {}", module.getId());
@@ -145,12 +156,60 @@ public class TrailGenerationConsumer {
         List<Lesson> lessons = lessonRepository.findByModuleIdOrderByOrderIndexAsc(module.getId());
 
         for (Lesson lesson : lessons) {
-            // Por enquanto, apenas marca como não-placeholder e adiciona conteúdo básico
-            // TODO: Chamar ContentGenerationService para gerar conteúdo real via LLM
             lesson.setIsPlaceholder(false);
-            lesson.setContent(generatePlaceholderContent(lesson, message));
+
+            String content = generateLessonWithRetry(lesson, message, 3);
+            lesson.setContent(content);
             lessonRepository.save(lesson);
         }
+    }
+
+    /**
+     * Gera conteúdo da lição com retry automático.
+     * Usa backoff exponencial entre tentativas.
+     *
+     * @param lesson Lição a ser gerada
+     * @param message Mensagem com contexto do estudante
+     * @param maxRetries Número máximo de tentativas
+     * @return Conteúdo JSON da lição
+     */
+    private String generateLessonWithRetry(Lesson lesson, TrailGenerationMessage message, int maxRetries) {
+        int attempt = 0;
+        Exception lastException = null;
+
+        while (attempt < maxRetries) {
+            attempt++;
+            try {
+                log.debug("Gerando lição '{}' (tentativa {}/{})", lesson.getTitle(), attempt, maxRetries);
+
+                return trailGenerationAIService.generateLessonContent(
+                        lesson.getTitle(),
+                        lesson.getType().name(),
+                        message.getStudentId(),
+                        message.getLanguageCode(),
+                        message.getLevelCode()
+                );
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("Falha ao gerar lição '{}' (tentativa {}/{}): {}",
+                        lesson.getTitle(), attempt, maxRetries, e.getMessage());
+
+                if (attempt < maxRetries) {
+                    try {
+                        long delayMs = 2000L * attempt; // Backoff: 2s, 4s, 6s
+                        Thread.sleep(delayMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Fallback após todas as tentativas
+        log.error("Falha definitiva ao gerar lição '{}' após {} tentativas. Usando placeholder.",
+                lesson.getTitle(), maxRetries, lastException);
+        return generatePlaceholderContent(lesson, message);
     }
 
     /**

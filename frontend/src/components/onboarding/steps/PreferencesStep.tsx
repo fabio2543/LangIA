@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOnboarding } from '../../../hooks/useOnboarding';
 import { learningPreferencesService } from '../../../services/profileService';
 import { Button } from '../../common/Button';
+import { logger } from '../../../utils/logger';
 import type { LearningPreferences, TimeAvailable, LearningFormat, LearningObjective } from '../../../types';
 
 const TIME_OPTIONS: { value: TimeAvailable; label: string }[] = [
@@ -71,7 +72,7 @@ export const PreferencesStep = () => {
           setSelectedObjectives(existingObjectives);
         }
       } catch (err) {
-        console.error('Erro ao carregar preferencias:', err);
+        logger.error('Erro ao carregar preferencias:', err);
       } finally {
         setIsLoading(false);
       }
@@ -121,7 +122,7 @@ export const PreferencesStep = () => {
       nextStep();
     } catch (err) {
       setError('Erro ao salvar preferencias. Tente novamente.');
-      console.error('Erro ao salvar:', err);
+      logger.error('Erro ao salvar:', err);
     } finally {
       setIsSaving(false);
     }

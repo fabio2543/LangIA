@@ -1,16 +1,23 @@
+import { useState } from 'react';
 import { cn } from '../../utils/cn';
+import { Button } from '../common/Button';
 import type { TrailSummary } from '../../types/trail';
 
 interface TrailCardProps {
   trail: TrailSummary;
   onClick?: () => void;
+  onRegenerate?: (trailId: string, languageCode: string) => Promise<void>;
+  onDelete?: (trailId: string) => Promise<void>;
   className?: string;
 }
 
 /**
  * Card de trilha para exibição no dashboard.
  */
-export const TrailCard = ({ trail, onClick, className }: TrailCardProps) => {
+export const TrailCard = ({ trail, onClick, onRegenerate, onDelete, className }: TrailCardProps) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const isReady = trail.status === 'READY';
   const isGenerating = trail.status === 'GENERATING' || trail.status === 'PARTIAL';
 
@@ -24,6 +31,39 @@ export const TrailCard = ({ trail, onClick, className }: TrailCardProps) => {
       return `${hours}h ${mins}min`;
     }
     return `${mins}min`;
+  };
+
+  const handleRegenerate = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onRegenerate || isRegenerating) return;
+    setIsRegenerating(true);
+    try {
+      await onRegenerate(trail.id, trail.languageCode);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onDelete || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(trail.id);
+    } finally {
+      setIsDeleting(false);
+      setShowConfirmDelete(false);
+    }
+  };
+
+  const handleConfirmDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowConfirmDelete(true);
+  };
+
+  const handleCancelDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowConfirmDelete(false);
   };
 
   return (
@@ -101,6 +141,63 @@ export const TrailCard = ({ trail, onClick, className }: TrailCardProps) => {
             </p>
             <p className="text-xs text-textLight">Tempo</p>
           </div>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      {(onRegenerate || onDelete) && (
+        <div className="flex gap-2 pt-4 mt-4 border-t border-gray-100">
+          {onRegenerate && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRegenerate}
+              disabled={isRegenerating || isDeleting || isGenerating}
+              className="flex-1"
+            >
+              {isRegenerating || isGenerating ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  Gerando...
+                </span>
+              ) : (
+                'Gerar Trilha'
+              )}
+            </Button>
+          )}
+          {onDelete && !showConfirmDelete && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleConfirmDelete}
+              disabled={isRegenerating || isDeleting}
+              className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+            >
+              Excluir
+            </Button>
+          )}
+          {showConfirmDelete && (
+            <div className="flex gap-2 flex-1">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? 'Excluindo...' : 'Confirmar'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelDelete}
+                disabled={isDeleting}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

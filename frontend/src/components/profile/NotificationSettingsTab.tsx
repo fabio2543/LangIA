@@ -6,6 +6,7 @@ import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
 import { notificationSettingsService } from '../../services/profileService';
 import { handleApiError } from '../../services/api';
+import { logger } from '../../utils/logger';
 import type {
   NotificationSettings,
   NotificationChannel,
@@ -60,7 +61,7 @@ export const NotificationSettingsTab = () => {
         }
       } catch {
         // Se não houver dados, usa defaults
-        console.log('No notification settings found, using defaults');
+        logger.log('No notification settings found, using defaults');
       } finally {
         setIsLoading(false);
       }

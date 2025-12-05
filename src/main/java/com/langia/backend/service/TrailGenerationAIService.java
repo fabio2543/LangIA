@@ -1,11 +1,8 @@
 package com.langia.backend.service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,12 +22,13 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Serviço para geração de trilhas de aprendizado usando IA (LLM).
  * Utiliza as preferências e assessment do estudante para personalizar a trilha.
+ * Usa GeminiApiClient para chamadas diretas à API do Gemini.
  */
 @Service
 @Slf4j
 public class TrailGenerationAIService {
 
-    private final ChatClient chatClient;
+    private final GeminiApiClient geminiApiClient;
     private final StudentLearningPreferencesRepository preferencesRepository;
     private final StudentLanguageEnrollmentRepository enrollmentRepository;
     private final StudentSkillAssessmentRepository assessmentRepository;
@@ -39,18 +37,37 @@ public class TrailGenerationAIService {
 
     @Autowired
     public TrailGenerationAIService(
-            @Autowired(required = false) ChatModel chatModel,
+            GeminiApiClient geminiApiClient,
             StudentLearningPreferencesRepository preferencesRepository,
             StudentLanguageEnrollmentRepository enrollmentRepository,
             StudentSkillAssessmentRepository assessmentRepository,
             PromptTemplateRepository promptTemplateRepository,
             ObjectMapper objectMapper) {
-        this.chatClient = chatModel != null ? ChatClient.create(chatModel) : null;
+        this.geminiApiClient = geminiApiClient;
         this.preferencesRepository = preferencesRepository;
         this.enrollmentRepository = enrollmentRepository;
         this.assessmentRepository = assessmentRepository;
         this.promptTemplateRepository = promptTemplateRepository;
         this.objectMapper = objectMapper;
+    }
+
+    /**
+     * Verifica se o LLM está disponível.
+     */
+    private boolean isLlmAvailable() {
+        return geminiApiClient.isConfigured();
+    }
+
+    /**
+     * Chama o LLM (Gemini API direta).
+     */
+    private String callLlm(String prompt) {
+        if (!geminiApiClient.isConfigured()) {
+            throw new RuntimeException("Gemini API não configurada");
+        }
+
+        log.debug("Chamando Gemini API...");
+        return geminiApiClient.generateContent(prompt);
     }
 
     /**
@@ -65,8 +82,8 @@ public class TrailGenerationAIService {
         log.info("Gerando trilha personalizada para estudante: {}, idioma: {}, nível: {}",
                 studentId, languageCode, levelCode);
 
-        if (chatClient == null) {
-            log.warn("ChatModel não configurado. Retornando estrutura padrão.");
+        if (!isLlmAvailable()) {
+            log.warn("Gemini API não configurada. Retornando estrutura padrão.");
             return getDefaultTrailStructure(levelCode);
         }
 
@@ -77,10 +94,7 @@ public class TrailGenerationAIService {
         String prompt = buildTrailGenerationPrompt(context, languageCode, levelCode);
 
         try {
-            String response = chatClient.prompt()
-                    .user(prompt)
-                    .call()
-                    .content();
+            String response = callLlm(prompt);
 
             log.info("Trilha gerada com sucesso via IA para estudante: {}", studentId);
             return extractJsonFromResponse(response);
@@ -95,7 +109,7 @@ public class TrailGenerationAIService {
      *
      * @param lessonTitle Título da lição
      * @param lessonType Tipo da lição
-     * @param context Contexto do estudante
+     * @param studentId ID do estudante
      * @param languageCode Idioma
      * @param levelCode Nível
      * @return JSON com o conteúdo da lição
@@ -104,8 +118,8 @@ public class TrailGenerationAIService {
             UUID studentId, String languageCode, String levelCode) {
         log.info("Gerando conteúdo da lição: {} para estudante: {}", lessonTitle, studentId);
 
-        if (chatClient == null) {
-            log.warn("ChatModel não configurado. Retornando conteúdo padrão.");
+        if (!isLlmAvailable()) {
+            log.warn("Gemini API não configurada. Retornando conteúdo padrão.");
             return getDefaultLessonContent(lessonType);
         }
 
@@ -113,10 +127,7 @@ public class TrailGenerationAIService {
         String prompt = buildLessonContentPrompt(lessonTitle, lessonType, context, languageCode, levelCode);
 
         try {
-            String response = chatClient.prompt()
-                    .user(prompt)
-                    .call()
-                    .content();
+            String response = callLlm(prompt);
 
             log.info("Conteúdo da lição gerado com sucesso");
             return extractJsonFromResponse(response);
@@ -275,7 +286,31 @@ public class TrailGenerationAIService {
             slotValues.put("daily_time", context.dailyTime != null ? translateDailyTime(context.dailyTime) : "30 minutos");
 
             // Preencher template com os valores
-            return template.fillTemplate(slotValues);
+            String filledTemplate = template.fillTemplate(slotValues);
+
+            // Adicionar instruções de formato JSON usando o outputSchema do template
+            StringBuilder prompt = new StringBuilder(filledTemplate);
+            prompt.append("\n\n## IMPORTANTE - Formato de Resposta:\n");
+            prompt.append("Você DEVE responder APENAS com um objeto JSON válido, sem nenhum texto adicional.\n");
+            prompt.append("NÃO use markdown, NÃO adicione explicações antes ou depois do JSON.\n");
+
+            if (template.getOutputSchema() != null && !template.getOutputSchema().isBlank()) {
+                prompt.append("\nEsquema JSON esperado:\n```json\n");
+                prompt.append(template.getOutputSchema());
+                prompt.append("\n```\n");
+            } else {
+                // Schema padrão quando não há outputSchema definido
+                prompt.append("\nEstrutura JSON mínima esperada:\n```json\n");
+                prompt.append("{\n");
+                prompt.append("  \"title\": \"Título da lição\",\n");
+                prompt.append("  \"type\": \"").append(lessonType).append("\",\n");
+                prompt.append("  \"content\": { ... conteúdo específico do tipo ... },\n");
+                prompt.append("  \"exercises\": [ ... exercícios práticos ... ]\n");
+                prompt.append("}\n```\n");
+            }
+
+            prompt.append("\nResponda SOMENTE com o JSON, começando com { e terminando com }.");
+            return prompt.toString();
         }
 
         // Fallback: prompt genérico se não houver template
@@ -338,13 +373,37 @@ public class TrailGenerationAIService {
             prompt.append("- Contexto do estudante: ").append(context.objectiveDescription).append("\n");
         }
 
-        prompt.append("\nCrie conteúdo engajante e prático. Responda em JSON com a estrutura apropriada para o tipo de lição.");
+        prompt.append("\n## IMPORTANTE - Formato de Resposta:\n");
+        prompt.append("Você DEVE responder APENAS com um objeto JSON válido, sem nenhum texto adicional.\n");
+        prompt.append("NÃO use markdown, NÃO adicione explicações antes ou depois do JSON.\n\n");
+
+        prompt.append("Estrutura JSON esperada:\n```json\n");
+        prompt.append("{\n");
+        prompt.append("  \"title\": \"").append(lessonTitle).append("\",\n");
+        prompt.append("  \"type\": \"").append(lessonType).append("\",\n");
+        prompt.append("  \"level\": \"").append(levelCode).append("\",\n");
+        prompt.append("  \"content\": {\n");
+        prompt.append("    \"introduction\": \"Texto introdutório\",\n");
+        prompt.append("    \"mainContent\": \"Conteúdo principal da lição\",\n");
+        prompt.append("    \"examples\": [\"exemplo1\", \"exemplo2\"]\n");
+        prompt.append("  },\n");
+        prompt.append("  \"exercises\": [\n");
+        prompt.append("    {\n");
+        prompt.append("      \"question\": \"Pergunta do exercício\",\n");
+        prompt.append("      \"options\": [\"A\", \"B\", \"C\", \"D\"],\n");
+        prompt.append("      \"correctAnswer\": \"A\",\n");
+        prompt.append("      \"explanation\": \"Explicação da resposta\"\n");
+        prompt.append("    }\n");
+        prompt.append("  ]\n");
+        prompt.append("}\n```\n");
+        prompt.append("\nResponda SOMENTE com o JSON, começando com { e terminando com }.");
 
         return prompt.toString();
     }
 
     /**
      * Extrai JSON de uma resposta que pode conter markdown ou texto adicional.
+     * Sanitiza o JSON para garantir compatibilidade com PostgreSQL JSONB.
      */
     private String extractJsonFromResponse(String response) {
         if (response == null || response.isBlank()) {
@@ -358,9 +417,12 @@ public class TrailGenerationAIService {
         if (jsonStart >= 0 && jsonEnd > jsonStart) {
             String json = response.substring(jsonStart, jsonEnd + 1);
             try {
-                // Validar que é JSON válido
-                objectMapper.readTree(json);
-                return json;
+                // Validar e sanitizar o JSON:
+                // 1. Parse para validar estrutura
+                // 2. Serializa de volta para garantir encoding correto
+                Object parsed = objectMapper.readValue(json, Object.class);
+                String sanitized = objectMapper.writeValueAsString(parsed);
+                return sanitized;
             } catch (Exception e) {
                 log.warn("JSON extraído não é válido: {}", e.getMessage());
             }

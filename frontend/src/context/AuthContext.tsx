@@ -4,9 +4,19 @@ import { authService, handleApiError, AUTH_ERROR_EVENT, type ApiError } from '..
 import { AuthContext } from './AuthContextDef';
 
 const STORAGE_KEYS = {
-  // Token agora é gerenciado via cookie HttpOnly (mais seguro contra XSS)
+  // Dados do usuário em sessionStorage (não persiste entre abas/sessões)
+  // Mais seguro que localStorage pois limpa ao fechar aba
+  // Token JWT é gerenciado via cookie HttpOnly pelo backend
   USER: 'langia-user',
 } as const;
+
+// Usa sessionStorage em vez de localStorage para dados sensíveis
+// sessionStorage é limpo quando a aba é fechada, reduzindo exposição a XSS
+const secureStorage = {
+  getItem: (key: string) => sessionStorage.getItem(key),
+  setItem: (key: string, value: string) => sessionStorage.setItem(key, value),
+  removeItem: (key: string) => sessionStorage.removeItem(key),
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -33,16 +43,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             permissions: validation.session.permissions,
             onboardingCompleted: validation.session.onboardingCompleted ?? false,
           };
-          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
+          secureStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
           setUser(authUser);
         } else {
           // Sessão inválida - limpa dados locais
-          localStorage.removeItem(STORAGE_KEYS.USER);
+          secureStorage.removeItem(STORAGE_KEYS.USER);
           setUser(null);
         }
       } catch {
         // Erro na validação (ex: backend indisponível) - limpa dados locais
-        localStorage.removeItem(STORAGE_KEYS.USER);
+        secureStorage.removeItem(STORAGE_KEYS.USER);
         setUser(null);
       }
       setIsLoading(false);
@@ -74,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       onboardingCompleted: response.onboardingCompleted ?? false,
     };
 
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
+    secureStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authUser));
     setUser(authUser);
   };
 
@@ -82,14 +92,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const updateOnboardingCompleted = (completed: boolean) => {
     if (user) {
       const updatedUser = { ...user, onboardingCompleted: completed };
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+      secureStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
       setUser(updatedUser);
     }
   };
 
   // Limpa dados locais (cookie é limpo pelo backend no logout)
   const clearAuthData = () => {
-    localStorage.removeItem(STORAGE_KEYS.USER);
+    secureStorage.removeItem(STORAGE_KEYS.USER);
     setUser(null);
   };
 
