@@ -3,7 +3,9 @@ package com.langia.backend.controller;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -247,6 +249,71 @@ public class TrailController {
 
         TrailProgressDTO progress = trailService.getProgress(id);
         return ResponseEntity.ok(progress);
+    }
+
+    // ========== STATUS STREAM (SSE) ==========
+
+    @GetMapping(value = "/{id}/status/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "Stream de status da trilha", description = "SSE para acompanhar status de geração da trilha em tempo real")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Stream iniciado"),
+            @ApiResponse(responseCode = "404", description = "Trilha não encontrada")
+    })
+    public SseEmitter streamTrailStatus(
+            @Parameter(description = "ID da trilha") @PathVariable UUID id) {
+
+        log.info("GET /api/trails/{}/status/stream - SSE iniciado", id);
+
+        SseEmitter emitter = new SseEmitter(60000L); // 60 segundos timeout
+
+        // Buscar status atual e enviar imediatamente
+        try {
+            TrailDTO trail = trailService.getTrailById(id);
+            emitter.send(SseEmitter.event()
+                    .name("status")
+                    .data(trail.getStatus()));
+
+            // Se a trilha já está READY, completar o stream
+            if ("READY".equals(trail.getStatus())) {
+                emitter.send(SseEmitter.event()
+                        .name("complete")
+                        .data("Trail generation completed"));
+                emitter.complete();
+            } else {
+                // Polling simples para verificar status a cada 2 segundos
+                new Thread(() -> {
+                    try {
+                        for (int i = 0; i < 30; i++) { // Max 60 segundos
+                            Thread.sleep(2000);
+                            TrailDTO currentTrail = trailService.getTrailById(id);
+                            emitter.send(SseEmitter.event()
+                                    .name("status")
+                                    .data(currentTrail.getStatus()));
+
+                            if ("READY".equals(currentTrail.getStatus()) ||
+                                "FAILED".equals(currentTrail.getStatus())) {
+                                emitter.send(SseEmitter.event()
+                                        .name("complete")
+                                        .data("Trail generation " + currentTrail.getStatus().name().toLowerCase()));
+                                emitter.complete();
+                                break;
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("SSE stream error for trail {}: {}", id, e.getMessage());
+                        emitter.completeWithError(e);
+                    }
+                }).start();
+            }
+        } catch (Exception e) {
+            log.error("Error starting SSE stream for trail {}: {}", id, e.getMessage());
+            emitter.completeWithError(e);
+        }
+
+        emitter.onCompletion(() -> log.debug("SSE completed for trail {}", id));
+        emitter.onTimeout(() -> log.debug("SSE timeout for trail {}", id));
+
+        return emitter;
     }
 
 }

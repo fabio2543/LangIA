@@ -66,8 +66,10 @@ public class TrailGenerationAIService {
             throw new RuntimeException("Gemini API não configurada");
         }
 
-        log.debug("Chamando Gemini API...");
-        return geminiApiClient.generateContent(prompt);
+        log.info("=== PROMPT ENVIADO AO LLM ===\n{}\n=== FIM DO PROMPT ===", prompt);
+        String response = geminiApiClient.generateContent(prompt);
+        log.info("=== RESPOSTA DO LLM ===\n{}\n=== FIM DA RESPOSTA ===", response);
+        return response;
     }
 
     /**

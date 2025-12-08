@@ -41,9 +41,10 @@ public interface TrailRepository extends JpaRepository<Trail, UUID> {
     List<Trail> findActiveByStudentId(@Param("studentId") UUID studentId);
 
     /**
-     * Busca trilha pelo hash de conteúdo.
+     * Busca trilha pelo hash de conteúdo (apenas trilhas READY para cache).
      */
-    Optional<Trail> findByContentHash(String contentHash);
+    @Query("SELECT t FROM Trail t WHERE t.contentHash = :contentHash AND t.status = 'READY' ORDER BY t.createdAt DESC LIMIT 1")
+    Optional<Trail> findByContentHash(@Param("contentHash") String contentHash);
 
     /**
      * Busca trilhas por status.
@@ -117,11 +118,11 @@ public interface TrailRepository extends JpaRepository<Trail, UUID> {
     List<Trail> findReadyByStudentId(@Param("studentId") UUID studentId);
 
     /**
-     * Busca trilha por ID com módulos e lições (evita N+1 queries).
+     * Busca trilha por ID com módulos (evita N+1 queries).
+     * Nota: lessons são carregadas via lazy loading para evitar MultipleBagFetchException.
      */
     @Query("SELECT DISTINCT t FROM Trail t " +
            "LEFT JOIN FETCH t.modules m " +
-           "LEFT JOIN FETCH m.lessons " +
            "LEFT JOIN FETCH m.competency " +
            "LEFT JOIN FETCH t.progress " +
            "LEFT JOIN FETCH t.language " +

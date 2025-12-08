@@ -240,7 +240,15 @@ public class StudentProfileService {
     @Transactional(readOnly = true)
     public List<SkillAssessmentResponseDTO> getSkillAssessments(UUID userId) {
         findUserOrThrow(userId);
+        // Retorna apenas o assessment mais recente por idioma
         return assessmentRepository.findByUserIdOrderByAssessedAtDesc(userId).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        StudentSkillAssessment::getLanguage,
+                        assessment -> assessment,
+                        (existing, replacement) -> existing // Mantém o primeiro (mais recente)
+                ))
+                .values()
+                .stream()
                 .map(this::mapToSkillAssessmentResponseDTO)
                 .toList();
     }

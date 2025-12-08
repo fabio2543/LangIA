@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -31,7 +32,8 @@ public interface StudentLanguageEnrollmentRepository extends JpaRepository<Stude
     /**
      * Busca enrollment específico de usuário e idioma.
      */
-    Optional<StudentLanguageEnrollment> findByUserIdAndLanguageCode(UUID userId, String languageCode);
+    @Query("SELECT e FROM StudentLanguageEnrollment e WHERE e.user.id = :userId AND e.language.code = :languageCode")
+    Optional<StudentLanguageEnrollment> findByUserIdAndLanguageCode(@Param("userId") UUID userId, @Param("languageCode") String languageCode);
 
     /**
      * Busca o idioma primário de um usuário.
@@ -46,10 +48,13 @@ public interface StudentLanguageEnrollmentRepository extends JpaRepository<Stude
     /**
      * Verifica se um usuário já tem um idioma específico cadastrado.
      */
-    boolean existsByUserIdAndLanguageCode(UUID userId, String languageCode);
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM StudentLanguageEnrollment e WHERE e.user.id = :userId AND e.language.code = :languageCode")
+    boolean existsByUserIdAndLanguageCode(@Param("userId") UUID userId, @Param("languageCode") String languageCode);
 
     /**
      * Remove enrollment de um usuário e idioma específico.
      */
-    void deleteByUserIdAndLanguageCode(UUID userId, String languageCode);
+    @Modifying
+    @Query("DELETE FROM StudentLanguageEnrollment e WHERE e.user.id = :userId AND e.language.code = :languageCode")
+    void deleteByUserIdAndLanguageCode(@Param("userId") UUID userId, @Param("languageCode") String languageCode);
 }

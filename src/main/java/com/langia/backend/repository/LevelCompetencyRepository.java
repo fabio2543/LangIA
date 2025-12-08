@@ -35,7 +35,7 @@ public interface LevelCompetencyRepository extends JpaRepository<LevelCompetency
     /**
      * Busca associações de um nível com competências ordenadas por peso.
      */
-    @Query("SELECT lc FROM LevelCompetency lc WHERE lc.level.id = :levelId ORDER BY lc.weight DESC")
+    @Query("SELECT lc FROM LevelCompetency lc JOIN FETCH lc.competency WHERE lc.level.id = :levelId ORDER BY lc.weight DESC")
     List<LevelCompetency> findByLevelIdOrderByWeightDesc(@Param("levelId") UUID levelId);
 
     /**

@@ -176,11 +176,13 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
               cleanupSubscription();
               // Recarregar trilha completa
               loadTrailById(trail.id);
+              loadActiveTrails(); // Atualiza lista após geração
             }
           },
           () => {
             setIsGenerating(false);
             cleanupSubscription();
+            loadActiveTrails(); // Atualiza lista mesmo em erro/timeout
           }
         );
       }
@@ -193,7 +195,7 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
     } finally {
       setIsLoading(false);
     }
-  }, [cleanupSubscription, loadTrailById]);
+  }, [cleanupSubscription, loadTrailById, loadActiveTrails]);
 
   // Gerar trilha
   const generateTrail = useCallback(async (request: GenerateTrailRequest): Promise<Trail> => {
@@ -218,11 +220,13 @@ export const TrailProvider = ({ children }: TrailProviderProps) => {
               setIsGenerating(false);
               cleanupSubscription();
               loadTrailById(trail.id);
+              loadActiveTrails(); // Atualiza lista após geração
             }
           },
           () => {
             setIsGenerating(false);
             cleanupSubscription();
+            loadActiveTrails(); // Atualiza lista mesmo em erro/timeout
           }
         );
       } else {

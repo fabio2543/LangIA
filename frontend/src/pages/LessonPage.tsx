@@ -210,29 +210,7 @@ export const LessonPage = () => {
 
             {/* Lesson Body */}
             <div className="bg-white rounded-2xl shadow-card p-8 mb-6">
-              {(lesson.content as { introduction?: string })?.introduction && (
-                <p className="text-lg text-text mb-6">
-                  {(lesson.content as { introduction: string }).introduction}
-                </p>
-              )}
-
-              {Array.isArray((lesson.content as { sections?: unknown[] })?.sections) ? (
-                ((lesson.content as { sections: Array<{ title: string; content: string }> }).sections).map(
-                  (section, index) => (
-                    <div key={index} className="mb-8 last:mb-0">
-                      <h2 className="text-lg font-semibold text-text mb-3">{section.title}</h2>
-                      <p className="text-text-light">{section.content}</p>
-                    </div>
-                  )
-                )
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-5xl mb-4">{typeConfig?.icon || '📚'}</div>
-                  <p className="text-text-light">
-                    O conteúdo desta lição será carregado aqui.
-                  </p>
-                </div>
-              )}
+              {renderLessonContent(lesson.content, typeConfig?.icon)}
             </div>
 
             {/* Action Buttons */}
@@ -259,6 +237,151 @@ export const LessonPage = () => {
           </>
         )}
       </main>
+    </div>
+  );
+};
+
+/**
+ * Interface para o conteúdo da lição gerado por IA.
+ */
+interface LessonContentAI {
+  explicacao?: string;
+  mini_texto?: string;
+  exemplos?: string[];
+  exercicios?: Array<{
+    tipo: string;
+    enunciado: string;
+    resposta_correta: string;
+    opcoes?: string[];
+  }>;
+  gabarito?: Array<{
+    resposta: string;
+    feedback: string;
+  }>;
+  // Formato alternativo
+  introduction?: string;
+  sections?: Array<{ title: string; content: string }>;
+}
+
+/**
+ * Renderiza o conteúdo da lição baseado no formato.
+ */
+const renderLessonContent = (content: unknown, fallbackIcon?: string) => {
+  const lessonContent = content as LessonContentAI;
+
+  // Verifica se tem conteúdo no formato AI (explicacao, exercicios, etc)
+  if (lessonContent?.explicacao || lessonContent?.exercicios || lessonContent?.mini_texto) {
+    return (
+      <div className="space-y-8">
+        {/* Explicação */}
+        {lessonContent.explicacao && (
+          <div>
+            <h2 className="text-lg font-semibold text-text mb-3">📚 Explicação</h2>
+            <p className="text-text-light leading-relaxed">{lessonContent.explicacao}</p>
+          </div>
+        )}
+
+        {/* Mini Texto */}
+        {lessonContent.mini_texto && (
+          <div className="bg-blue-50 rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-text mb-3">📖 Texto de Exemplo</h2>
+            <p className="text-text-light italic leading-relaxed">{lessonContent.mini_texto}</p>
+          </div>
+        )}
+
+        {/* Exemplos */}
+        {lessonContent.exemplos && lessonContent.exemplos.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold text-text mb-3">💡 Exemplos</h2>
+            <ul className="space-y-2">
+              {lessonContent.exemplos.map((exemplo, index) => (
+                <li key={index} className="flex items-start gap-2 text-text-light">
+                  <span className="text-primary">•</span>
+                  <span>{exemplo}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Exercícios */}
+        {lessonContent.exercicios && lessonContent.exercicios.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold text-text mb-4">✏️ Exercícios</h2>
+            <div className="space-y-6">
+              {lessonContent.exercicios.map((exercicio, index) => (
+                <div key={index} className="bg-gray-50 rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="bg-primary text-white text-sm font-medium px-2 py-1 rounded">
+                      {index + 1}
+                    </span>
+                    <span className="text-xs text-text-light uppercase">
+                      {exercicio.tipo.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  <p className="text-text whitespace-pre-wrap">{exercicio.enunciado}</p>
+                  {exercicio.opcoes && (
+                    <div className="mt-3 space-y-2">
+                      {exercicio.opcoes.map((opcao, i) => (
+                        <div key={i} className="flex items-center gap-2 text-text-light">
+                          <span className="w-6 h-6 rounded-full bg-white border border-gray-300 flex items-center justify-center text-sm">
+                            {String.fromCharCode(97 + i)}
+                          </span>
+                          <span>{opcao}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Gabarito (colapsável) */}
+        {lessonContent.gabarito && lessonContent.gabarito.length > 0 && (
+          <details className="bg-green-50 rounded-xl p-5">
+            <summary className="text-lg font-semibold text-text cursor-pointer">
+              ✅ Ver Respostas
+            </summary>
+            <div className="mt-4 space-y-4">
+              {lessonContent.gabarito.map((item, index) => (
+                <div key={index} className="border-l-4 border-green-400 pl-4">
+                  <p className="font-medium text-green-700">Resposta {index + 1}: {item.resposta}</p>
+                  <p className="text-text-light text-sm mt-1">{item.feedback}</p>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+    );
+  }
+
+  // Formato alternativo com introduction/sections
+  if (lessonContent?.introduction || lessonContent?.sections) {
+    return (
+      <>
+        {lessonContent.introduction && (
+          <p className="text-lg text-text mb-6">{lessonContent.introduction}</p>
+        )}
+        {lessonContent.sections?.map((section, index) => (
+          <div key={index} className="mb-8 last:mb-0">
+            <h2 className="text-lg font-semibold text-text mb-3">{section.title}</h2>
+            <p className="text-text-light">{section.content}</p>
+          </div>
+        ))}
+      </>
+    );
+  }
+
+  // Fallback - sem conteúdo
+  return (
+    <div className="text-center py-8">
+      <div className="text-5xl mb-4">{fallbackIcon || '📚'}</div>
+      <p className="text-text-light">
+        O conteúdo desta lição será carregado aqui.
+      </p>
     </div>
   );
 };
