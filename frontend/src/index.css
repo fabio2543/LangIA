@@ -2,27 +2,100 @@
 
 /* ============================================
    LANGIA - Design System (Tailwind CSS 4)
+   Inspirado no protótipo com design Warm & Inviting
    ============================================ */
 
+/* CSS Variables (HSL) - Compatível com shadcn/ui pattern */
+:root {
+  /* Background */
+  --background: hsl(30 56% 97%);
+  --foreground: hsl(244 46% 20%);
+
+  /* Card */
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(244 46% 20%);
+
+  /* Popover */
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(244 46% 20%);
+
+  /* Primary (Indigo) */
+  --primary: hsl(239 84% 67%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  /* Secondary (Light Indigo) */
+  --secondary: hsl(231 100% 94%);
+  --secondary-foreground: hsl(243 75% 45%);
+
+  /* Muted */
+  --muted: hsl(240 10% 94%);
+  --muted-foreground: hsl(240 5% 50%);
+
+  /* Accent */
+  --accent: hsl(239 84% 67%);
+  --accent-foreground: hsl(0 0% 100%);
+
+  /* Destructive */
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 98%);
+
+  /* Border/Input/Ring */
+  --border: hsl(240 10% 90%);
+  --input: hsl(240 10% 90%);
+  --ring: hsl(239 84% 67%);
+
+  /* Radius */
+  --radius: 1rem;
+
+  /* Indigo scale (for text-indigo-950, bg-indigo-50, etc.) */
+  --indigo-50: #eef2ff;
+  --indigo-100: #e0e7ff;
+  --indigo-200: #c7d2fe;
+  --indigo-600: #4f46e5;
+  --indigo-700: #4338ca;
+  --indigo-900: #312e81;
+  --indigo-950: #1e1b4b;
+}
+
 @theme {
-  /* Cores - gera classes como bg-primary, text-primary, etc */
+  /* Cores Primárias */
   --color-primary: #6366F1;
   --color-primary-dark: #4F46E5;
   --color-primary-light: #E0E7FF;
   --color-accent: #818CF8;
+
+  /* Cores de Background - Warm Theme */
   --color-bg: #EEF2FF;
-  --color-bg-warm: #FDF8F3;
+  --color-bg-warm: hsl(30 56% 97%);
+  --color-bg-card: #FFFFFF;
+
+  /* Cores de Texto */
   --color-text: #1E1B4B;
   --color-text-light: #6B7280;
+  --color-text-muted: #94A3B8;
+
+  /* Cores de Status - Gamification */
+  --color-success: #10B981;
+  --color-success-light: #D1FAE5;
+  --color-warning: #F59E0B;
+  --color-warning-light: #FEF3C7;
+  --color-streak: #F97316;
 
   /* Fontes */
-  --font-family-sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-family-serif: Georgia, 'Times New Roman', serif;
+  --font-family-sans: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-family-serif: 'Merriweather', Georgia, 'Times New Roman', serif;
 
   /* Shadows customizadas */
   --shadow-primary: 0 10px 30px rgba(99, 102, 241, 0.25);
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.1);
   --shadow-badge: 0 8px 30px rgba(0, 0, 0, 0.1);
+  --shadow-primary-glow: 0 4px 20px rgba(99, 102, 241, 0.2);
+
+  /* Border Radius */
+  --radius-card: 1rem;
+  --radius-card-lg: 1.5rem;
+  --radius-button: 9999px;
 }
 
 /* ============================================
@@ -69,6 +142,85 @@ h1, h2, h3 {
 }
 
 /* ============================================
+   Card Hover Effects
+   ============================================ */
+
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.card-interactive {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  transform: scale(1.01);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* ============================================
+   Gamification Colors
+   ============================================ */
+
+.text-streak {
+  color: var(--color-streak);
+}
+
+.bg-streak {
+  background-color: var(--color-streak);
+}
+
+.bg-streak-light {
+  background-color: rgba(249, 115, 22, 0.1);
+}
+
+.bg-success-light {
+  background-color: var(--color-success-light);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+/* ============================================
+   Animation Utilities
+   ============================================ */
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ============================================
    Select/Dropdown Styles
    ============================================ */
 
@@ -91,4 +243,81 @@ select option:checked {
 
 select option:disabled {
   color: var(--color-text-light);
+}
+
+/* ============================================
+   Bottom Navigation (Mobile)
+   ============================================ */
+
+.bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Add padding to main content when bottom nav is present */
+.has-bottom-nav {
+  padding-bottom: 5rem;
+}
+
+/* ============================================
+   Indigo Color Utilities (Protótipo)
+   ============================================ */
+
+.text-indigo-950 {
+  color: var(--indigo-950);
+}
+
+.text-indigo-200 {
+  color: var(--indigo-200);
+}
+
+.bg-indigo-50 {
+  background-color: var(--indigo-50);
+}
+
+.bg-indigo-100 {
+  background-color: var(--indigo-100);
+}
+
+.bg-indigo-600 {
+  background-color: var(--indigo-600);
+}
+
+.bg-indigo-900\/50 {
+  background-color: rgba(49, 46, 129, 0.5);
+}
+
+.shadow-indigo-200 {
+  --tw-shadow-color: var(--indigo-200);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
+/* ============================================
+   Muted Foreground Utility
+   ============================================ */
+
+.text-muted-foreground {
+  color: var(--muted-foreground);
+}
+
+/* ============================================
+   Additional Prototype Utilities
+   ============================================ */
+
+.animate-in {
+  animation-duration: 150ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: both;
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.duration-500 {
+  animation-duration: 500ms;
+}
+
+/* Backdrop blur for navbar */
+.backdrop-blur-md {
+  backdrop-filter: blur(12px);
 }

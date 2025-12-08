@@ -10,6 +10,10 @@ import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { EmailConfirmationPage } from './pages/EmailConfirmationPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { LessonsPage } from './pages/LessonsPage';
+import { OnboardingPage } from './pages/OnboardingPage';
+import { TutorsPage } from './pages/TutorsPage';
+import { LessonViewPage } from './pages/LessonViewPage';
 import { PersonalDataTab } from './components/profile/PersonalDataTab';
 import { LearningPreferencesTab } from './components/profile/LearningPreferencesTab';
 import { SkillAssessmentTab } from './components/profile/SkillAssessmentTab';
@@ -29,6 +33,10 @@ function App() {
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/email-confirmed" element={<EmailConfirmationPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/lessons" element={<LessonsPage />} />
+            <Route path="/lesson/:id" element={<LessonViewPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/tutors" element={<TutorsPage />} />
             <Route path="/profile" element={<ProfilePage />}>
               <Route index element={<PersonalDataTab />} />
               <Route path="learning" element={<LearningPreferencesTab />} />

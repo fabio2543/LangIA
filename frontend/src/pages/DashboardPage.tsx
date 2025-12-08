@@ -1,12 +1,24 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Button } from '../components/common/Button';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../i18n';
+import { AuthNavbar } from '../components/layout/AuthNavbar';
+import { BottomNav } from '../components/layout/BottomNav';
+import {
+  StatCard,
+  ProgressCard,
+  NextLessonCard,
+  RecommendedTutors,
+} from '../components/dashboard';
+import {
+  mockUserProgress,
+  getNextLesson,
+  getRecommendedTutors,
+} from '../services/mockData';
 
 export const DashboardPage = () => {
-  const { t, locale, setLocale } = useTranslation();
-  const { user, logout, isLoading } = useAuth();
+  const { t } = useTranslation();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
 
   // Redireciona para login se não estiver autenticado
@@ -16,140 +28,133 @@ export const DashboardPage = () => {
     }
   }, [user, isLoading, navigate]);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
-
   // Mostra loading enquanto verifica autenticação
   if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-bg-warm flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-4">⏳</div>
-          <p className="text-text-light">Carregando...</p>
+        <div className="text-center animate-in fade-in duration-500">
+          <div className="text-4xl mb-4 animate-pulse-slow">⏳</div>
+          <p className="text-muted-foreground">Carregando...</p>
         </div>
       </div>
     );
   }
 
-  const profileLabel = user.profile === 'TEACHER' ? t.dashboard.teacher : t.dashboard.student;
+  const nextLesson = getNextLesson();
+  const recommendedTutors = getRecommendedTutors(3);
 
   return (
     <div className="min-h-screen bg-bg-warm">
-      {/* Header */}
-      <header className="bg-text shadow-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <a href="/" className="flex items-center gap-1 text-2xl font-bold text-white">
-              Lang<span className="text-accent">IA</span>
-            </a>
-
-            <div className="flex items-center gap-4">
-              {/* Seletor de Idioma */}
-              <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-1">
-                {(['pt', 'en', 'es'] as const).map((lang) => (
-                  <button
-                    key={lang}
-                    onClick={() => setLocale(lang)}
-                    className={`px-2 py-1 text-xs font-medium rounded-full transition-colors ${
-                      locale === lang
-                        ? 'bg-white text-text'
-                        : 'text-white/70 hover:text-white'
-                    }`}
-                  >
-                    {lang.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              {/* Botão Perfil */}
-              <Link to="/profile">
-                <Button variant="secondary" size="sm">
-                  {t.dashboard.myProfile}
-                </Button>
-              </Link>
-
-              {/* Botão Logout */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                disabled={isLoading}
-              >
-                {isLoading ? t.dashboard.loggingOut : t.dashboard.logout}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Auth Navbar */}
+      <AuthNavbar showStreak streak={mockUserProgress.streak} />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Welcome Card */}
-        <div className="bg-white rounded-3xl shadow-card p-8 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div>
-              <h1 className="text-3xl font-serif italic text-text mb-2">
-                {t.dashboard.welcome}, {user.name.split(' ')[0]}! 👋
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 has-bottom-nav md:pb-10">
+        <div className="space-y-8 animate-in fade-in duration-500">
+          {/* Welcome & Stats */}
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 space-y-2">
+              <h1 className="font-serif text-3xl md:text-4xl font-bold text-indigo-950">
+                {t.dashboard?.welcome || 'Welcome back'}, {user.name.split(' ')[0]}! 👋
               </h1>
-              <p className="text-text-light">{t.dashboard.subtitle}</p>
+              <p className="text-muted-foreground text-lg">
+                {t.dashboard?.subtitle || "You're making great progress. Ready for the next level?"}
+              </p>
             </div>
-            <Link to="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
-              <div className="w-16 h-16 rounded-full bg-primary-light flex items-center justify-center text-3xl">
-                {user.profile === 'TEACHER' ? '👨‍🏫' : '🎓'}
+            <div className="p-4 flex items-center justify-between bg-white shadow-sm border-0 rounded-2xl">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                  <span className="text-xl">⚡</span>
+                </div>
+                <div>
+                  <p className="font-bold text-lg">{mockUserProgress.streak} {t.dashboard?.streakDays || 'Days'}</p>
+                  <p className="text-sm text-muted-foreground">{t.dashboard?.streak || 'Current Streak'}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-semibold text-text">{user.name}</p>
-                <p className="text-sm text-text-light">{profileLabel}</p>
+              <div className="flex items-center gap-3 border-l pl-4">
+                <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                  <span className="text-xl">🏆</span>
+                </div>
+                <div>
+                  <p className="font-bold text-lg">{mockUserProgress.totalXp.toLocaleString()}</p>
+                  <p className="text-sm text-muted-foreground">{t.dashboard?.totalXp || 'Total XP'}</p>
+                </div>
               </div>
-            </Link>
-          </div>
-        </div>
-
-        {/* Profile Info Card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-bg flex items-center justify-center">
-                📧
-              </div>
-              <span className="text-sm text-text-light">Email</span>
             </div>
-            <p className="font-medium text-text">{user.email}</p>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-bg flex items-center justify-center">
-                👤
-              </div>
-              <span className="text-sm text-text-light">{t.dashboard.profile}</span>
-            </div>
-            <p className="font-medium text-text">{profileLabel}</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-bg flex items-center justify-center">
-                🆔
-              </div>
-              <span className="text-sm text-text-light">ID</span>
-            </div>
-            <p className="font-medium text-text text-sm truncate">{user.id}</p>
-          </div>
-        </div>
+          {/* Progress Card */}
+          <ProgressCard
+            currentLevel={mockUserProgress.currentLevel}
+            nextLevel={mockUserProgress.nextLevel}
+            progressPercent={mockUserProgress.progressPercent}
+          />
 
-        {/* Coming Soon Section */}
-        <div className="bg-gradient-to-br from-primary to-primary-dark rounded-3xl shadow-card p-8 text-white text-center">
-          <div className="text-6xl mb-4">🚀</div>
-          <h2 className="text-2xl font-serif italic mb-2">{t.dashboard.comingSoon}</h2>
-          <p className="text-white/80 max-w-md mx-auto">
-            {t.dashboard.comingSoonDesc}
-          </p>
+          {/* Next Lesson Section */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-serif text-2xl font-bold text-indigo-950">
+                {t.dashboard?.nextLesson || 'Next Lesson'}
+              </h3>
+              <Link to="/lessons" className="text-primary font-medium hover:underline">
+                {t.dashboard?.viewAll || 'View all'}
+              </Link>
+            </div>
+            <NextLessonCard lesson={nextLesson} />
+          </section>
+
+          {/* Recommended Tutors Section */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-serif text-2xl font-bold text-indigo-950">
+                {t.dashboard?.recommendedTutors || 'Recommended Tutors'}
+              </h3>
+              <Link to="/tutors" className="text-primary font-medium hover:underline">
+                Find more
+              </Link>
+            </div>
+            <RecommendedTutors tutors={recommendedTutors} />
+          </section>
+
+          {/* Quick Stats */}
+          <section>
+            <h3 className="font-serif text-2xl font-bold text-indigo-950 mb-4">
+              Your Stats
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard
+                icon="📚"
+                value={mockUserProgress.lessonsCompleted}
+                label="Lessons Completed"
+                variant="default"
+              />
+              <StatCard
+                icon="⏱️"
+                value={mockUserProgress.hoursStudied}
+                label="Hours Studied"
+                sublabel="hrs"
+                variant="default"
+              />
+              <StatCard
+                icon="🏆"
+                value={mockUserProgress.maxStreak}
+                label="Best Streak"
+                sublabel={t.dashboard?.streakDays || 'days'}
+                variant="default"
+              />
+              <StatCard
+                icon="🎯"
+                value={`${mockUserProgress.progressPercent}%`}
+                label="Level Progress"
+                variant="progress"
+              />
+            </div>
+          </section>
         </div>
       </main>
+
+      {/* Bottom Navigation - Mobile only */}
+      <BottomNav />
     </div>
   );
 };

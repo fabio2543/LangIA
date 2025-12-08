@@ -32,8 +32,8 @@ export const ValuesSection = () => {
 
       <div className="flex flex-col md:flex-row justify-center gap-8 lg:gap-12">
         {values.map((value) => (
-          <div key={value.title} className="max-w-[280px] mx-auto md:mx-0">
-            <div className="w-20 lg:w-[90px] h-20 lg:h-[90px] bg-bg rounded-3xl mx-auto mb-5 flex items-center justify-center text-3xl lg:text-4xl">
+          <div key={value.title} className="max-w-[280px] mx-auto md:mx-0 p-6 rounded-3xl card-hover">
+            <div className="w-20 lg:w-[90px] h-20 lg:h-[90px] bg-bg rounded-3xl mx-auto mb-5 flex items-center justify-center text-3xl lg:text-4xl transition-transform group-hover:scale-110">
               {value.icon}
             </div>
             <h3 className="text-lg font-semibold text-text mb-2.5">

@@ -74,7 +74,7 @@ export const TeachersSection = () => {
         {TEACHERS.map((teacher) => (
           <div
             key={teacher.id}
-            className="bg-white rounded-2xl overflow-hidden shadow-card"
+            className="bg-white rounded-3xl overflow-hidden shadow-card card-hover"
           >
             {/* Image Area */}
             <div

@@ -34,7 +34,7 @@ export const GoalsSection = () => {
       {/* Cards */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Card 1: Goals */}
-        <div className="flex-1 bg-primary-light rounded-3xl p-6 lg:p-8 min-h-[420px]">
+        <div className="flex-1 bg-primary-light rounded-3xl p-6 lg:p-8 min-h-[420px] card-hover">
           <h3 className="text-xl lg:text-[22px] font-semibold text-text mb-6 lg:mb-8">
             {t.goals.focusTitle}
           </h3>
@@ -72,7 +72,7 @@ export const GoalsSection = () => {
         </div>
 
         {/* Card 2: Track Progress */}
-        <div className="flex-1 bg-bg rounded-3xl p-6 lg:p-8 min-h-[420px]">
+        <div className="flex-1 bg-bg rounded-3xl p-6 lg:p-8 min-h-[420px] card-hover">
           <h3 className="text-xl lg:text-[22px] font-semibold text-text mb-5">
             {t.goals.trackTitle}
           </h3>
