@@ -14,6 +14,7 @@ import { LessonsPage } from './pages/LessonsPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { TutorsPage } from './pages/TutorsPage';
 import { LessonViewPage } from './pages/LessonViewPage';
+import { SrsReviewPage } from './pages/SrsReviewPage';
 import { PersonalDataTab } from './components/profile/PersonalDataTab';
 import { LearningPreferencesTab } from './components/profile/LearningPreferencesTab';
 import { SkillAssessmentTab } from './components/profile/SkillAssessmentTab';
@@ -35,6 +36,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/lessons" element={<LessonsPage />} />
             <Route path="/lesson/:id" element={<LessonViewPage />} />
+            <Route path="/review" element={<SrsReviewPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/tutors" element={<TutorsPage />} />
             <Route path="/profile" element={<ProfilePage />}>

@@ -24,6 +24,10 @@ public class RedisConfig {
 
     @Value("${spring.data.redis.port:6379}")
     private int redisPort;
+
+    @Value("${spring.data.redis.password:}")
+    private String redisPassword;
+
     /**
      * Configura a factory de conexão com Redis.
      *
@@ -34,6 +38,9 @@ public class RedisConfig {
         RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration();
         redisConfig.setHostName(redisHost);
         redisConfig.setPort(redisPort);
+        if (redisPassword != null && !redisPassword.isEmpty()) {
+            redisConfig.setPassword(redisPassword);
+        }
         return new LettuceConnectionFactory(redisConfig);
     }
 

@@ -9,6 +9,10 @@ import {
   ProgressCard,
   NextLessonCard,
   RecommendedTutors,
+  StreakCard,
+  SrsReviewCard,
+  TopErrorsCard,
+  DailyActivityCard,
 } from '../components/dashboard';
 import {
   mockUserProgress,
@@ -82,6 +86,19 @@ export const DashboardPage = () => {
               </div>
             </div>
           </div>
+
+          {/* Learning Progress Widgets */}
+          <section>
+            <h3 className="font-serif text-2xl font-bold text-indigo-950 mb-4">
+              {t.dashboard?.progress || 'Seu Progresso'}
+            </h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StreakCard languageCode="en" />
+              <SrsReviewCard languageCode="en" />
+              <DailyActivityCard languageCode="en" />
+              <TopErrorsCard languageCode="en" />
+            </div>
+          </section>
 
           {/* Progress Card */}
           <ProgressCard

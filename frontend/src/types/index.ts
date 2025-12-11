@@ -322,3 +322,304 @@ export interface NotificationSettings {
   quietModeStart?: string;
   quietModeEnd?: string;
 }
+
+// ============================================
+// Linguistic Chunks
+// ============================================
+
+export type ChunkCategory =
+  | 'greeting'
+  | 'request'
+  | 'question'
+  | 'direction'
+  | 'emergency'
+  | 'social'
+  | 'shopping'
+  | 'travel';
+
+export interface LinguisticChunk {
+  id: string;
+  languageCode: string;
+  cefrLevel: CefrLevel;
+  chunkText: string;
+  translation: string;
+  category: ChunkCategory;
+  usageContext?: string;
+  variations: string[];
+  audioUrl?: string;
+  difficultyScore: number;
+  isCore: boolean;
+}
+
+export interface ChunkMastery {
+  id: string;
+  chunkId: string;
+  chunk?: LinguisticChunk;
+  masteryLevel: number;
+  timesPracticed: number;
+  lastPracticedAt?: string;
+  contextsUsed: string[];
+}
+
+// ============================================
+// Vocabulary & SRS (Spaced Repetition System)
+// ============================================
+
+export type CardType = 'word' | 'chunk' | 'phrase' | 'grammar';
+export type SrsQuality = 0 | 1 | 2 | 3 | 4 | 5;
+
+export interface VocabularyCard {
+  id: string;
+  languageCode: string;
+  cefrLevel: CefrLevel;
+  cardType: CardType;
+  front: string;
+  back: string;
+  context?: string;
+  exampleSentence?: string;
+  audioUrl?: string;
+  imageUrl?: string;
+  tags: string[];
+  isSystemCard: boolean;
+}
+
+export interface SrsProgress {
+  id: string;
+  cardId: string;
+  card?: VocabularyCard;
+  easinessFactor: number;
+  intervalDays: number;
+  repetitions: number;
+  nextReviewDate: string;
+  lastReviewedAt?: string;
+  lastQuality?: SrsQuality;
+  totalReviews: number;
+  correctReviews: number;
+}
+
+export interface SrsReviewRequest {
+  cardId: string;
+  quality: SrsQuality;
+}
+
+export interface SrsReviewResponse {
+  nextReviewDate: string;
+  intervalDays: number;
+  easinessFactor: number;
+}
+
+export interface SrsCardWithProgress extends VocabularyCard {
+  progress: SrsProgress;
+}
+
+export interface SrsDueCardsResponse {
+  cards: SrsCardWithProgress[];
+  totalDue: number;
+  reviewedToday: number;
+}
+
+export interface SrsStats {
+  totalCards: number;
+  mastered: number;
+  learning: number;
+  newCards: number;
+  dueToday: number;
+  reviewedToday: number;
+}
+
+// ============================================
+// Exercise Tracking & Error Patterns
+// ============================================
+
+export type ExerciseType =
+  | 'listen'
+  | 'select'
+  | 'speak'
+  | 'write'
+  | 'fill_blank'
+  | 'match'
+  | 'order';
+
+export type SkillType =
+  | 'listening'
+  | 'speaking'
+  | 'reading'
+  | 'writing'
+  | 'grammar'
+  | 'vocabulary'
+  | 'pronunciation';
+
+export type ErrorCategory =
+  | 'verb_conjugation'
+  | 'article_usage'
+  | 'pronunciation'
+  | 'word_order'
+  | 'vocabulary_choice'
+  | 'spelling'
+  | 'preposition';
+
+export interface ExerciseResponse {
+  id: string;
+  lessonId?: string;
+  exerciseId?: string;
+  exerciseType: ExerciseType;
+  skillType: SkillType;
+  languageCode: string;
+  userResponse?: string;
+  correctResponse?: string;
+  isCorrect: boolean;
+  partialScore?: number;
+  errorType?: string;
+  errorDetails?: Record<string, unknown>;
+  responseTimeMs?: number;
+  hintsUsed: number;
+  createdAt: string;
+}
+
+export interface SubmitExerciseRequest {
+  lessonId?: string;
+  exerciseId?: string;
+  exerciseType: ExerciseType;
+  skillType: SkillType;
+  languageCode: string;
+  userResponse: string;
+  correctResponse: string;
+  responseTimeMs?: number;
+  hintsUsed?: number;
+}
+
+export interface ErrorPattern {
+  id: string;
+  languageCode: string;
+  skillType: SkillType;
+  errorCategory: ErrorCategory;
+  errorDescription: string;
+  exampleErrors: string[];
+  occurrenceCount: number;
+  firstOccurredAt: string;
+  lastOccurredAt: string;
+  isResolved: boolean;
+}
+
+// ============================================
+// Skill Metrics
+// ============================================
+
+export interface SkillMetric {
+  id: string;
+  languageCode: string;
+  skillType: SkillType;
+  metricDate: string;
+  exercisesCompleted: number;
+  correctAnswers: number;
+  accuracyPercentage: number;
+  avgResponseTimeMs?: number;
+  totalPracticeTimeMinutes: number;
+  xpEarned: number;
+}
+
+export type MetricTrend = 'improving' | 'stable' | 'declining';
+
+export interface SkillMetricsSummary {
+  skillType: SkillType;
+  totalExercises: number;
+  avgAccuracy: number;
+  avgResponseTimeMs: number;
+  trend: MetricTrend;
+}
+
+export interface DailyProgressPoint {
+  date: string;
+  exercisesCompleted: number;
+  accuracyPercentage: number;
+}
+
+// ============================================
+// Streaks & Daily Activity
+// ============================================
+
+export interface DailyStreak {
+  id: string;
+  languageCode: string;
+  currentStreak: number;
+  longestStreak: number;
+  lastStudyDate?: string;
+  streakStartedAt?: string;
+  streakFrozenUntil?: string;
+  totalStudyDays: number;
+}
+
+export interface DailyActivityLog {
+  id: string;
+  languageCode: string;
+  activityDate: string;
+  lessonsStarted: number;
+  lessonsCompleted: number;
+  exercisesCompleted: number;
+  cardsReviewed: number;
+  minutesStudied: number;
+  xpEarned: number;
+  skillsPracticed: SkillType[];
+}
+
+export interface ActivitySummary {
+  totalLessons: number;
+  totalExercises: number;
+  totalCardsReviewed: number;
+  totalMinutes: number;
+  totalXp: number;
+  activeDays: number;
+  avgMinutesPerDay: number;
+}
+
+// ============================================
+// Socratic Interactions (AI Feedback)
+// ============================================
+
+export interface SocraticInteraction {
+  id: string;
+  lessonId?: string;
+  exerciseId?: string;
+  languageCode: string;
+  skillType?: SkillType;
+  userInput: string;
+  aiQuestion: string;
+  userReflection?: string;
+  aiFollowUp?: string;
+  finalCorrection?: string;
+  learningMoment?: string;
+  selfCorrectionAchieved: boolean;
+  interactionRounds: number;
+  userRating?: number;
+  tokensUsed?: number;
+  createdAt: string;
+}
+
+export interface SocraticFeedbackRequest {
+  lessonId?: string;
+  exerciseId?: string;
+  languageCode: string;
+  skillType: SkillType;
+  userInput: string;
+  expectedOutput?: string;
+  errorContext?: string;
+}
+
+export interface SocraticFeedbackResponse {
+  interactionId: string;
+  aiQuestion: string;
+  hints?: string[];
+}
+
+export interface SocraticReflectionRequest {
+  interactionId: string;
+  userReflection: string;
+}
+
+export interface SocraticReflectionResponse {
+  needsFollowUp: boolean;
+  aiFollowUp?: string;
+  finalCorrection?: string;
+  learningMoment: string;
+  selfCorrectionAchieved: boolean;
+}
